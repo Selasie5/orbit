@@ -1,23 +1,47 @@
 "use client"
-import React from 'react'
+import React, { useState } from 'react'
 import { Formik, Form, Field } from 'formik'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createClient } from '@/utils/supabase/client'
+import { useRouter } from 'next/navigation'
 
 
 const page = () => {
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
+  
   const initialValues = {
     email: '',
     password: ''
   }
 
   const handleSubmit = async (values: typeof initialValues) => {
-  const {data, error} = await createClient().auth.signInWithPassword({
-    email: values.email,
-    password: values.password
-  }
-)
+    setIsLoading(true)
+    
+    try {
+      const {data, error} = await createClient().auth.signInWithPassword({
+        email: values.email,
+        password: values.password
+      })
+      
+      if (error) {
+        console.error('Login error:', error)
+        alert('Login failed: ' + error.message)
+        return
+      }
+      
+      if (data.user) {
+        console.log('Login successful:', data.user)
+        // Redirect to dashboard after successful login
+        router.push('/home')
+      }
+    } catch (error) {
+      console.error('Login process error:', error)
+      alert('An error occurred during login')
+    } finally {
+      setIsLoading(false)
+    }
   }
   return (
    <main className='flex flex-col justify-center items-center  w-full min-h-screen'>
@@ -36,15 +60,19 @@ const page = () => {
         <Label htmlFor="password">Password</Label>
         <Field name="password" type="password" as={Input} placeholder="Password" />
       </div>
-      <button type="submit" className='bg-lime-200 text-black p-2 rounded hover:bg-lime-300 hover:cursor-pointer'>
-        Log In
+      <button 
+        type="submit" 
+        disabled={isLoading}
+        className='bg-lime-200 text-black p-2 rounded hover:bg-lime-300 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
+      >
+        {isLoading ? 'Logging in...' : 'Log In'}
       </button>
     </Form>
   </Formik>
 </div>
 <div className='mt-4'>
 <span className=''>
-  Don't have an account? <a href="/auth/signup" className="text-green-950 hover:underline">Sign Up</a>
+  Don't have an account? <a href="/auth/signup/profile" className="text-green-950 hover:underline">Sign Up</a>
 </span>
 </div>
 
