@@ -1,5 +1,5 @@
 "use client"
-import React from 'react'
+import React,{useState} from 'react'
 import { Form, Field, Formik } from 'formik'
 import { createClient } from '@/utils/supabase/client'
 import { Input } from '@/components/ui/input'
@@ -8,27 +8,42 @@ import { Select, SelectTrigger, SelectValue,SelectContent, SelectItem } from '@/
 import { Textarea } from '@/components/ui/textarea'
 import { useRouter } from 'next/navigation'
 // import { SelectContent } from '@radix-ui/react-select'
-import { coursesInGhanaUniversities } from "../../../../../data"
+import { coursesInGhanaUniversities, universtitiesInGhana } from "../../../../../data"
 const page = () => {
   const router = useRouter();
-  const [selectedFile, setSelectedFile] = React.useState<File | null>(null)
-  const [uploading, setUploading] = React.useState(false)
+  const [selectedFile, setSelectedFile] =useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [imageURL, setImageURL] = useState<string|undefined>(undefined);
+  const [imageID, setImageID] = useState<string|undefined>(undefined)
+  
   
   const initialValues = {
       fullName: '',
       email: '',
       password: '',
+      university:"",
       picture:null as File | null,
       course: '',
-      skills: [],
+      skills: '',
       bio: '',
-      interests: []
+      interests: ''
     }
   
     const handleSubmit = async (values: typeof initialValues) => {
     setUploading(true)
     
     try {
+      // Debug: Log all form values
+      console.log('Form values submitted:', values)
+      console.log('Image URL:', imageURL)
+      
+      // Validate required fields
+      if (!values.fullName || !values.email || !values.password) {
+        alert('Please fill in all required fields')
+        setUploading(false)
+        return
+      }
+      
       // First, sign up the user
       const {data: authData, error: authError} = await createClient().auth.signUp({
         email: values.email,
@@ -36,11 +51,12 @@ const page = () => {
         options: {
           data: {
             full_name: values.fullName,
-            picture:selectedFile ? selectedFile.name : null,
-            course: values.course
+            avatar_url: imageURL || null
           }
         }
       })
+      
+      console.log('Auth signup result:', { authData, authError })
       
       if (authError) {
         console.error('Signup error:', authError)
@@ -49,30 +65,109 @@ const page = () => {
         return
       }
       
-      // If there's a selected file and user was created, upload the avatar
-      if (selectedFile && authData.user) {
-        console.log('Uploading file for user:', authData.user.id)
-        const avatarPath = await uploadFile(selectedFile)
-        
-        if (avatarPath) {
-          // Update user metadata with avatar URL
-          const { error: updateError } = await createClient().auth.updateUser({
-            data: { avatar_url: avatarPath }
-          })
-          if (updateError) {
-            console.error('Avatar update error:', updateError)
-          } else {
-            console.log('Avatar uploaded successfully:', avatarPath)
-          }
-        }
+      if (!authData.user) {
+        alert('Account creation failed. Please try again.')
+        setUploading(false)
+        return
       }
       
-      alert('Account created successfully!')
-      // Navigate to next step or dashboard
+      console.log('User created successfully:', authData.user.id)
+      
+      // Check if profile already exists for this user
+      const { data: existingProfile } = await createClient()
+        .from('profiles')
+        .select('id')
+        .eq('id', authData.user.id)
+        .single()
+      
+      if (existingProfile) {
+        console.log('Profile already exists, updating instead of creating new one')
+      }
+      
+      // Create or update profile in profiles table
+      console.log('Creating profile with data:', {
+        id: authData.user.id,
+        full_name: values.fullName,
+        email: values.email,
+        course: values.course,
+        university: values.university,
+        skills: values.skills,
+        interests: values.interests,
+        bio: values.bio,
+        avatar_url: imageURL || null
+      });
+      
+      const profileData = {
+        id: authData.user.id,
+        full_name: values.fullName,
+        email: values.email,
+        course: values.course,
+        university: values.university,
+        skills: values.skills,
+        interests: values.interests,
+        bio: values.bio,
+        avatar_url: imageURL || null
+      }
+      
+      const { data: insertedProfile, error: profileError } = await createClient()
+        .from('profiles')
+        .upsert([profileData], {
+          onConflict: 'id',
+          ignoreDuplicates: false
+        })
+        .select()
+      
+      if (profileError) {
+        console.error('Profile creation error:', profileError)
+        console.error('Error details:', {
+          message: profileError.message,
+          details: profileError.details,
+          hint: profileError.hint,
+          code: profileError.code
+        })
+        
+        // Don't fail the entire process if profile creation fails
+        console.warn('Profile data will be saved to auth metadata instead')
+        
+        // Update user metadata as fallback with all the data
+        const { error: updateError } = await createClient().auth.updateUser({
+          data: {
+            full_name: values.fullName,
+            course: values.course,
+            university: values.university,
+            skills: values.skills,
+            interests: values.interests,
+            bio: values.bio,
+            avatar_url: imageURL || null,
+            profile_complete: true,
+            email: values.email
+          }
+        })
+        
+        if (updateError) {
+          console.error('User metadata update error:', updateError)
+        } else {
+          console.log('User metadata updated successfully')
+        }
+      } else {
+        console.log('Profile saved successfully:', insertedProfile)
+        
+        // Also update auth metadata for consistency
+        await createClient().auth.updateUser({
+          data: {
+            full_name: values.fullName,
+            avatar_url: imageURL || null,
+            profile_complete: true
+          }
+        })
+      }
+      
+      alert('Account and profile saved successfully! Welcome to Orbit!')
+      // Navigate directly to dashboard after successful signup
       router.push("/dashboard")
     } catch (error) {
       console.error('Signup process error:', error)
-      alert('An error occurred during signup')
+      alert('An error occurred during signup. Please try again.')
     } finally {
       setUploading(false)
     }
@@ -81,43 +176,43 @@ const page = () => {
 const uploadFile = async (file: File | null) => {
   if (!file) return null;
   
+  setUploading(true);
+  setSelectedFile(file);
+  
+  const data = new FormData();
+  data.append('file', file);
+  data.append('upload_preset',"domus-console")
+  
   try {
-    // Create a unique filename
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`
+    const res = await fetch("https://api.cloudinary.com/v1_1/dviigplcx/image/upload", {
+      method: 'POST',
+      body: data
+    });
     
-    const { data, error } = await createClient().storage
-      .from('profile')
-      .upload(fileName, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
-    
-    if (error) {
-      console.error('Upload error:', error)
-     
-      if (error.message.includes('not found') || error.message.includes('does not exist')) {
-        const { data: publicData, error: publicError } = await createClient().storage
-          .from('public')
-          .upload(`avatars/${fileName}`, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-        
-        if (publicError) {
-          console.error('Public upload error:', publicError)
-          return null
-        }
-        return publicData.path
-      }
-      return null
+    if (!res.ok) {
+      throw new Error(`Server responded with status: ${res.status}`);
     }
     
-    console.log('Upload successful:', data)
-    return data.path
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Expected JSON response from server');
+    }
+    
+    const result = await res.json();
+    if (!result || !result.secure_url) {
+      throw new Error('Invalid response from server');
+    }
+    
+    console.log("File uploaded successfully:", result);
+    setImageURL(result.secure_url);
+    setImageID(result.public_id);
+    
+    return result.secure_url;
   } catch (error) {
-    console.error('File upload error:', error)
-    return null
+    console.error("Error uploading file:", error);
+    return null;
+  } finally {
+    setUploading(false);
   }
 }
   return (
@@ -130,46 +225,127 @@ const uploadFile = async (file: File | null) => {
     <Form className='flex flex-col gap-4 w-full'>
       <div className='space-y-2'>
         <Label htmlFor="picture">Profile Photo</Label>
-        <Input 
-          id='picture' 
-          name='picture' 
-          type='file' 
-          accept="image/*" 
-          onChange={(e) => {
-            const file = e.target.files?.[0] || null
-            setSelectedFile(file)
-            console.log('File selected:', file?.name)
-          }}
-        />
-        {selectedFile && (
-          <p className="text-sm text-green-600">✓ Selected: {selectedFile.name}</p>
+        
+        {/* Image Preview */}
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-full border-2 border-gray-300 overflow-hidden bg-gray-100 flex items-center justify-center">
+            {imageURL && imageURL.trim() !== "" ? (
+              <img 
+                src={imageURL} 
+                alt="Profile preview" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="text-gray-400 text-center">
+                <svg className="w-8 h-8 mx-auto mb-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+                <span className="text-xs">No photo</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex-1">
+            <Input 
+              id='picture' 
+              name='picture' 
+              type='file' 
+              accept="image/*" 
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                if (file) {
+                  setSelectedFile(file);
+                  uploadFile(file);
+                }
+              }}
+              className="mb-2"
+            />
+            <p className="text-xs text-gray-500">
+              Upload a profile photo (JPG, PNG, or GIF)
+            </p>
+          </div>
+        </div>
+        
+       
+        
+        {uploading && (
+          <p className="text-sm text-blue-600">📤 Uploading...</p>
         )}
       </div>
+      
       <div className='space-y-2'>
-        <Label htmlFor="fullName">Course Offered</Label>
-      <Select value={initialValues.course} onValueChange={(value: string) => { (initialValues as typeof initialValues).course = value }}>
-        <SelectTrigger className="w-full">
-        <SelectValue placeholder="What course are you offering" />
-        </SelectTrigger>
-        <SelectContent>
-{coursesInGhanaUniversities.courses_in_ghana_universities.map((course) => (
-          <SelectItem key={course} value={course}>
-            {course}
-          </SelectItem>
-)
-)
-}
-        </SelectContent>
-   </Select>
-          </div>
-      <div className='space-y-2'>
-        <Label htmlFor="email">Bio</Label>
-        <Field name="email" type="email" as={Textarea} placeholder="Tell us a bit about yourself ..." />
+        <Label htmlFor="fullName">Full Name</Label>
+        <Field name="fullName" type="text" as={Input} placeholder="e.g. Akoto James" />
       </div>
+      
+      <div className='space-y-2'>
+        <Label htmlFor="email">Student Email</Label>
+        <Field name="email" type="email" as={Input} placeholder="e.g. jkakoto002@st.ug.edu.gh" />
+      </div>
+      
       <div className='space-y-2'>
         <Label htmlFor="password">Password</Label>
-        <Field name="password" type="password" as={Input} placeholder="Password" />
+        <Field name="password" type="password" as={Input} placeholder="Create a strong password" />
       </div>
+      
+      <div className='space-y-2'>
+        <Label htmlFor="university">University</Label>
+        <Field name="university">
+          {({ field, form }: any) => (
+            <Select 
+              value={field.value} 
+              onValueChange={(value: string) => form.setFieldValue('university', value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="What university are you currently in ?" />
+              </SelectTrigger>
+              <SelectContent>
+                {universtitiesInGhana.universities_in_ghana.map((university) => (
+                  <SelectItem key={university} value={university}>
+                    {university}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </Field>
+      </div>
+      <div className='space-y-2'>
+        <Label htmlFor="courses">Course Offered</Label>
+        <Field name="course">
+          {({ field, form }: any) => (
+            <Select 
+              value={field.value} 
+              onValueChange={(value: string) => form.setFieldValue('course', value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="What course are you offering" />
+              </SelectTrigger>
+              <SelectContent>
+                {coursesInGhanaUniversities.courses_in_ghana_universities.map((course) => (
+                  <SelectItem key={course} value={course}>
+                    {course}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </Field>
+      </div>
+      <div className='space-y-2'>
+        <Label htmlFor="skills">Skills</Label>
+        <Field name="skills" as={Textarea} placeholder="e.g. JavaScript, Python, Graphic Design..." />
+      </div>
+      <div className='space-y-2'>
+        <Label htmlFor="interests">Interests</Label>
+        <Field name="interests" as={Textarea} placeholder="e.g. Technology, Sports, Music, Reading..." />
+      </div>
+      <div className='space-y-2'>
+        <Label htmlFor="bio">Bio(Optional)</Label>
+        <Field name="bio" type="bio" as={Textarea} placeholder="Tell us a bit about yourself ..." />
+        </div>
+    
+ 
       <button 
         type="submit" 
         disabled={uploading}
@@ -182,7 +358,7 @@ const uploadFile = async (file: File | null) => {
 </div>
 <div className='mt-4'>
 <span className=''>
-  Already have an account? <a href="/auth/signup" className="text-green-950 hover:underline">Log In</a>
+  Already have an account? <a href="/auth/login" className="text-green-950 hover:underline">Log In</a>
 </span>
 </div>
 </div>
