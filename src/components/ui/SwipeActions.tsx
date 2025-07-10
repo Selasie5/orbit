@@ -29,7 +29,7 @@ const SwipeActions = ({
       <button
         onClick={onUndo}
         disabled={!canUndo}
-        className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+        className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-lime-400 to-lime-500 hover:from-lime-500 hover:to-lime-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
       >
         <ArrowUturnLeftIcon className="w-5 h-5 text-white" />
       </button>
@@ -37,7 +37,7 @@ const SwipeActions = ({
       <button
         onClick={onSwipeRight}
         disabled={!canSwipe}
-        className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+        className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-lime-500 to-green-600 hover:from-lime-600 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
       >
         <HeartIcon className="w-7 h-7 text-white" />
       </button>

@@ -70,7 +70,7 @@ const SwipeCard = ({
 
   return (
     <motion.div
-      className="h-[36rem] w-80 origin-bottom rounded-2xl bg-gradient-to-br from-slate-50 to-white backdrop-blur-sm border border-white/20 shadow-2xl overflow-hidden hover:cursor-grab active:cursor-grabbing"
+      className="h-[30rem] w-72 origin-bottom rounded-2xl bg-gradient-to-br from-slate-50 to-white backdrop-blur-sm border border-white/20 shadow-2xl overflow-hidden hover:cursor-grab active:cursor-grabbing"
       style={{
         gridRow: 1,
         gridColumn: 1,
@@ -108,39 +108,39 @@ const SwipeCard = ({
         
         {/* Content area with glassmorphism effect */}
         <div className="relative h-full flex flex-col justify-end">
-          {/* Glass card for content - now smaller to show more of the image */}
-          <div className="mx-4 mb-4 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-xl max-h-[40%]">
-            <div className="mb-3">
-              <h2 className="text-xl font-bold text-white mb-1 tracking-tight leading-tight">{name}, {age}</h2>
-              <p className="text-sm text-white/90 mb-0.5 font-medium">{course}</p>
-              <p className="text-xs text-white/80 font-light tracking-wide">{university}</p>
+          {/* Glass card for content - optimized for smaller card size */}
+          <div className="mx-3 mb-3 p-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 shadow-xl max-h-[45%]">
+            <div className="mb-2">
+              <h2 className="text-lg font-bold text-white mb-0.5 tracking-tight leading-tight">{name}, {age}</h2>
+              <p className="text-xs text-white/90 mb-0.5 font-medium leading-tight">{course}</p>
+              <p className="text-[10px] text-white/80 font-light tracking-wide leading-tight">{university}</p>
             </div>
             
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               <div>
-                <p className="text-[10px] font-semibold text-white/90 mb-1.5 uppercase tracking-wider">Skills</p>
-                <div className="flex flex-wrap gap-1">
-                  {skills.slice(0, 3).map((skill, index) => (
-                    <span key={index} className="text-[10px] bg-blue-500/80 text-white px-2 py-1 rounded-full backdrop-blur-sm border border-white/20 font-medium">
+                <p className="text-[9px] font-semibold text-white/90 mb-1 uppercase tracking-wider">Skills</p>
+                <div className="flex flex-wrap gap-0.5">
+                  {skills.slice(0, 2).map((skill, index) => (
+                    <span key={index} className="text-[8px] bg-lime-500/80 text-white px-1.5 py-0.5 rounded-full backdrop-blur-sm border border-white/20 font-medium">
                       {skill}
                     </span>
                   ))}
-                  {skills.length > 3 && (
-                    <span className="text-[10px] text-white/70 self-center ml-1 font-light">+{skills.length - 3} more</span>
+                  {skills.length > 2 && (
+                    <span className="text-[8px] text-white/70 self-center ml-1 font-light">+{skills.length - 2}</span>
                   )}
                 </div>
               </div>
               
               <div>
-                <p className="text-[10px] font-semibold text-white/90 mb-1.5 uppercase tracking-wider">Interests</p>
-                <div className="flex flex-wrap gap-1">
-                  {interests.slice(0, 3).map((interest, index) => (
-                    <span key={index} className="text-[10px] bg-emerald-500/80 text-white px-2 py-1 rounded-full backdrop-blur-sm border border-white/20 font-medium">
+                <p className="text-[9px] font-semibold text-white/90 mb-1 uppercase tracking-wider">Interests</p>
+                <div className="flex flex-wrap gap-0.5">
+                  {interests.slice(0, 2).map((interest, index) => (
+                    <span key={index} className="text-[8px] bg-green-500/80 text-white px-1.5 py-0.5 rounded-full backdrop-blur-sm border border-white/20 font-medium">
                       {interest}
                     </span>
                   ))}
-                  {interests.length > 3 && (
-                    <span className="text-[10px] text-white/70 self-center ml-1 font-light">+{interests.length - 3} more</span>
+                  {interests.length > 2 && (
+                    <span className="text-[8px] text-white/70 self-center ml-1 font-light">+{interests.length - 2}</span>
                   )}
                 </div>
               </div>

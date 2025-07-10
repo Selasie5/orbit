@@ -40,8 +40,8 @@ const SwipeStack = ({
   };
 
   return (
-    <div className="flex flex-col items-center gap-8 p-8">
-      <div className="grid h-[36rem] w-80 place-items-center">
+    <div className="flex flex-col items-center gap-6 p-6">
+      <div className="grid h-[30rem] w-72 place-items-center">
         {cards.map((card) => {
           return (
             <SwipeCard 
