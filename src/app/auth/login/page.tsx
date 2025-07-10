@@ -3,12 +3,13 @@ import React, { useState } from 'react'
 import { Formik, Form, Field } from 'formik'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/context/authContext'
 
 
 const page = () => {
   const router = useRouter()
+  const { signIn } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   
   const initialValues = {
@@ -20,10 +21,7 @@ const page = () => {
     setIsLoading(true)
     
     try {
-      const {data, error} = await createClient().auth.signInWithPassword({
-        email: values.email,
-        password: values.password
-      })
+      const { data, error } = await signIn(values.email, values.password)
       
       if (error) {
         console.error('Login error:', error)
@@ -34,7 +32,7 @@ const page = () => {
       if (data.user) {
         console.log('Login successful:', data.user)
         // Redirect to dashboard after successful login
-        router.push('/home')
+        router.push('/dashboard')
       }
     } catch (error) {
       console.error('Login process error:', error)

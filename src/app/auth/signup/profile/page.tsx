@@ -1,28 +1,27 @@
 "use client"
-import React,{useState} from 'react'
+import React, { useState } from 'react'
 import { Form, Field, Formik } from 'formik'
-import { createClient } from '@/utils/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectTrigger, SelectValue,SelectContent, SelectItem } from '@/components/ui/select'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useRouter } from 'next/navigation'
-// import { SelectContent } from '@radix-ui/react-select'
-import { coursesInGhanaUniversities, universtitiesInGhana } from "../../../../../data"
+import { useAuth } from '@/context/authContext'
+import { coursesInGhanaUniversities } from "../../../../../data"
+
 const page = () => {
-  const router = useRouter();
-  const [selectedFile, setSelectedFile] =useState<File | null>(null)
+  const router = useRouter()
+  const { signUp, createProfile } = useAuth()
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [imageURL, setImageURL] = useState<string|undefined>(undefined);
-  const [imageID, setImageID] = useState<string|undefined>(undefined)
-  
+  const [imageURL, setImageURL] = useState<string | undefined>(undefined)
+  const [imageID, setImageID] = useState<string | undefined>(undefined)
   
   const initialValues = {
       fullName: '',
       email: '',
       password: '',
-      university:"",
-      picture:null as File | null,
+      picture: null as File | null,
       course: '',
       skills: '',
       bio: '',
@@ -44,17 +43,15 @@ const page = () => {
         return
       }
       
-      // First, sign up the user
-      const {data: authData, error: authError} = await createClient().auth.signUp({
-        email: values.email,
-        password: values.password,
-        options: {
-          data: {
-            full_name: values.fullName,
-            avatar_url: imageURL || null
-          }
+      // First, sign up the user using AuthContext
+      const { data: authData, error: authError } = await signUp(
+        values.email,
+        values.password,
+        {
+          full_name: values.fullName,
+          avatar_url: imageURL || null
         }
-      })
+      )
       
       console.log('Auth signup result:', { authData, authError })
       
@@ -73,93 +70,27 @@ const page = () => {
       
       console.log('User created successfully:', authData.user.id)
       
-      // Check if profile already exists for this user
-      const { data: existingProfile } = await createClient()
-        .from('profiles')
-        .select('id')
-        .eq('id', authData.user.id)
-        .single()
-      
-      if (existingProfile) {
-        console.log('Profile already exists, updating instead of creating new one')
-      }
-      
-      // Create or update profile in profiles table
-      console.log('Creating profile with data:', {
-        id: authData.user.id,
-        full_name: values.fullName,
-        email: values.email,
-        course: values.course,
-        university: values.university,
-        skills: values.skills,
-        interests: values.interests,
-        bio: values.bio,
-        avatar_url: imageURL || null
-      });
-      
+      // Create profile using AuthContext
       const profileData = {
         id: authData.user.id,
         full_name: values.fullName,
         email: values.email,
         course: values.course,
-        university: values.university,
         skills: values.skills,
         interests: values.interests,
         bio: values.bio,
         avatar_url: imageURL || null
       }
       
-      const { data: insertedProfile, error: profileError } = await createClient()
-        .from('profiles')
-        .upsert([profileData], {
-          onConflict: 'id',
-          ignoreDuplicates: false
-        })
-        .select()
+      console.log('Creating profile with data:', profileData)
+      
+      const { data: profileResult, error: profileError } = await createProfile(profileData)
       
       if (profileError) {
-        console.error('Profile creation error:', profileError)
-        console.error('Error details:', {
-          message: profileError.message,
-          details: profileError.details,
-          hint: profileError.hint,
-          code: profileError.code
-        })
-        
-        // Don't fail the entire process if profile creation fails
-        console.warn('Profile data will be saved to auth metadata instead')
-        
-        // Update user metadata as fallback with all the data
-        const { error: updateError } = await createClient().auth.updateUser({
-          data: {
-            full_name: values.fullName,
-            course: values.course,
-            university: values.university,
-            skills: values.skills,
-            interests: values.interests,
-            bio: values.bio,
-            avatar_url: imageURL || null,
-            profile_complete: true,
-            email: values.email
-          }
-        })
-        
-        if (updateError) {
-          console.error('User metadata update error:', updateError)
-        } else {
-          console.log('User metadata updated successfully')
-        }
+        console.error('Profile creation failed:', profileError)
+        // Don't fail the entire process - the fallback is handled in AuthContext
       } else {
-        console.log('Profile saved successfully:', insertedProfile)
-        
-        // Also update auth metadata for consistency
-        await createClient().auth.updateUser({
-          data: {
-            full_name: values.fullName,
-            avatar_url: imageURL || null,
-            profile_complete: true
-          }
-        })
+        console.log('Profile created/updated successfully:', profileResult)
       }
       
       alert('Account and profile saved successfully! Welcome to Orbit!')
@@ -288,28 +219,6 @@ const uploadFile = async (file: File | null) => {
         <Field name="password" type="password" as={Input} placeholder="Create a strong password" />
       </div>
       
-      <div className='space-y-2'>
-        <Label htmlFor="university">University</Label>
-        <Field name="university">
-          {({ field, form }: any) => (
-            <Select 
-              value={field.value} 
-              onValueChange={(value: string) => form.setFieldValue('university', value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="What university are you currently in ?" />
-              </SelectTrigger>
-              <SelectContent>
-                {universtitiesInGhana.universities_in_ghana.map((university) => (
-                  <SelectItem key={university} value={university}>
-                    {university}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </Field>
-      </div>
       <div className='space-y-2'>
         <Label htmlFor="courses">Course Offered</Label>
         <Field name="course">
