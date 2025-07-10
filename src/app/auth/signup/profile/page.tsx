@@ -64,7 +64,7 @@ const page = () => {
         return
       }
       
-      // Create profile in profiles table
+      
       const profileData = {
         id: authData.user.id,
         full_name: values.fullName,
