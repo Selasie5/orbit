@@ -12,6 +12,7 @@ const page = () => {
   const { signIn } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   
+  
   const initialValues = {
     email: '',
     password: ''
@@ -32,7 +33,7 @@ const page = () => {
       if (data.user) {
         console.log('Login successful:', data.user)
         // Redirect to dashboard after successful login
-        router.push('/dashboard')
+        router.push('/home')
       }
     } catch (error) {
       console.error('Login process error:', error)

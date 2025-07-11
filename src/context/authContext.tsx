@@ -5,26 +5,69 @@ import { createClient } from '@/utils/supabase/client'
 
 interface AuthContextType {
   user: User | null
+  profile: any | null
   loading: boolean
   signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<{ data: any; error: any }>
   signIn: (email: string, password: string) => Promise<{ data: any; error: any }>
   signOut: () => Promise<void>
   updateUser: (updates: Record<string, any>) => Promise<{ data: any; error: any }>
   createProfile: (profileData: any) => Promise<{ data: any; error: any }>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+
+  // Function to load profile data
+  const loadProfile = async (userId: string) => {
+    try {
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      
+      if (error) {
+        console.error('Error loading profile:', error)
+        // If profile doesn't exist in table, try to get from user metadata
+        const { data: { user: currentUser } } = await supabase.auth.getUser()
+        if (currentUser?.user_metadata) {
+          setProfile(currentUser.user_metadata)
+        }
+      } else {
+        console.log('Profile loaded successfully:', profileData)
+        setProfile(profileData)
+      }
+    } catch (error) {
+      console.error('Profile loading error:', error)
+    }
+  }
+
+  const refreshProfile = async () => {
+    if (user?.id) {
+      await loadProfile(user.id)
+    }
+  }
 
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
+      const currentUser = session?.user ?? null
+      setUser(currentUser)
+      
+      // Load profile if user exists
+      if (currentUser?.id) {
+        await loadProfile(currentUser.id)
+      } else {
+        setProfile(null)
+      }
+      
       setLoading(false)
     }
 
@@ -33,7 +76,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null)
+        const currentUser = session?.user ?? null
+        setUser(currentUser)
+        
+        // Load profile if user exists, clear if not
+        if (currentUser?.id) {
+          await loadProfile(currentUser.id)
+        } else {
+          setProfile(null)
+        }
+        
         setLoading(false)
       }
     )
@@ -94,6 +146,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         console.log('Profile saved successfully:', insertedProfile)
         
+        // Update the profile state with the new data
+        setProfile(insertedProfile[0])
+        
         // Also update auth metadata for consistency
         await supabase.auth.updateUser({
           data: {
@@ -121,6 +176,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
+    // Clear profile data on logout
+    setProfile(null)
   }
 
   const updateUser = async (updates: Record<string, any>) => {
@@ -132,12 +189,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = {
     user,
+    profile,
     loading,
     signUp,
     signIn,
     signOut,
     updateUser,
-    createProfile
+    createProfile,
+    refreshProfile
   }
 
   return (

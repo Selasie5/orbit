@@ -6,7 +6,11 @@ import { useAuth } from "@/context/authContext";
 import { ChatBubbleLeftRightIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import Link from 'next/link';
 
+
 const page = () => {
+  const {user,profile} = useAuth();
+  console.log('Current user:', user);
+  console.log('Current profile:', profile);
   return (
      <div className="flex flex-col min-h-screen">
            {/* Header */}
