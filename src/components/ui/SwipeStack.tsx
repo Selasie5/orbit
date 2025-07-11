@@ -21,6 +21,7 @@ const SwipeStack = ({
       const frontCard = cards[cards.length - 1];
       setLastRemovedCard(frontCard);
       setCards((prev) => prev.filter((card) => card.id !== frontCard.id));
+      console.log("Swiped left on card:", frontCard.name);
     }
   };
 
@@ -29,6 +30,7 @@ const SwipeStack = ({
       const frontCard = cards[cards.length - 1];
       setLastRemovedCard(frontCard);
       setCards((prev) => prev.filter((card) => card.id !== frontCard.id));
+      console.log("Swiped right on card:", frontCard.name);
     }
   };
 
