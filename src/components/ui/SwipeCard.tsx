@@ -1,22 +1,14 @@
 import React, { Dispatch, SetStateAction } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { Card as ProfileCard } from "@/data/profileData";
 import { handleSwipeRight } from "@/actions/swipe/swipeRight";
 import { handleSwipeLeft } from "@/actions/swipe/swipeLeft";
 import { useAuth } from "@/context/authContext";
+import { MatchedProfile } from "./SwipeCards";
 
-interface SwipeCardProps {
-  id: number;
-  name: string;
-  profileImage: string;
-  course: string;
-  university: string;
-  skills: string[];
-  interests: string[];
-  age: number;
-  setCards: Dispatch<SetStateAction<ProfileCard[]>>;
-  cards: ProfileCard[];
-  setLastRemovedCard: Dispatch<SetStateAction<ProfileCard | null>>;
+interface SwipeCardProps extends MatchedProfile {
+  setCards: Dispatch<SetStateAction<MatchedProfile[]>>;
+  cards: MatchedProfile[];
+  setLastRemovedCard: Dispatch<SetStateAction<MatchedProfile | null>>;
 }
 
 const SwipeCard = ({
@@ -28,6 +20,8 @@ const SwipeCard = ({
   skills,
   interests,
   age,
+  matchData,
+  profile,
   setCards,
   cards,
   setLastRemovedCard,
@@ -47,7 +41,7 @@ const SwipeCard = ({
 
   const handleDragEnd = () => {
   if (Math.abs(x.get()) > 100) {
-    const targetUser: ProfileCard = {
+    const targetUser: MatchedProfile = {
       id,
       name,
       profileImage,
@@ -56,6 +50,8 @@ const SwipeCard = ({
       skills,
       interests,
       age,
+      matchData,
+      profile,
     };
 
     if (x.get() > 0) {
@@ -102,7 +98,7 @@ const SwipeCard = ({
 
   return (
     <motion.div
-      className="h-[30rem] w-72 origin-bottom rounded-2xl bg-gradient-to-br from-slate-50 to-white backdrop-blur-sm border border-white/20 overflow-hidden hover:cursor-grab active:cursor-grabbing"
+      className="h-[32rem] w-80 origin-bottom rounded-2xl bg-gradient-to-br from-slate-50 to-white backdrop-blur-sm border border-white/20 overflow-hidden hover:cursor-grab active:cursor-grabbing"
       style={{
         gridRow: 1,
         gridColumn: 1,
@@ -139,54 +135,104 @@ const SwipeCard = ({
         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent" />
         
         {/* Content */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white/10 backdrop-blur-md rounded-xl mx-3 mb-3 p-3 max-h-[45%] border border-white/20">
-          <div className="space-y-2">
-            {/* Header */}
-            <div className="mb-2">
-              <h3 className="text-lg font-bold text-white leading-tight">{name}, {age}</h3>
-              <p className="text-xs text-white/90 leading-tight">{course}</p>
-              <p className="text-[10px] text-white/80 leading-tight">{university}</p>
+        <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md rounded-xl mx-3 mb-3 p-4 max-h-[55%] overflow-y-auto border border-white/30">
+          <div className="space-y-3">
+            {/* Header with Match Score */}
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 leading-tight">{name}, {age}</h3>
+                <p className="text-xs text-gray-600 leading-tight">{course}</p>
+                <p className="text-[10px] text-gray-500 leading-tight">{university}</p>
+              </div>
+              {matchData && (
+                <div className="flex flex-col items-end">
+                  <div className="bg-gradient-to-r from-lime-500 to-green-600 text-white px-2 py-1 rounded-lg text-xs font-bold">
+                    {matchData.matchScore}% Match
+                  </div>
+                  <div className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[10px] mt-1">
+                    #{matchData.rank} • {matchData.matchType}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* AI Match Analysis */}
+            {matchData && (
+              <div className="bg-gradient-to-r from-lime-50 to-green-50 rounded-lg p-3 border border-lime-200">
+                <p className="text-xs font-medium text-gray-700 mb-2">🤖 AI Match Insight:</p>
+                <p className="text-[11px] text-gray-600 leading-relaxed line-clamp-3">
+                  {matchData.whyBestMatch}
+                </p>
+                
+                {/* Highlights */}
+                {matchData.highlights && matchData.highlights.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {matchData.highlights.slice(0, 3).map((highlight, index) => (
+                      <span
+                        key={index}
+                        className="px-1.5 py-0.5 bg-lime-100 text-lime-700 text-[9px] rounded border border-lime-300 leading-tight"
+                      >
+                        ✨ {highlight}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Skills */}
-            <div className="mb-1.5">
-              <p className="text-[9px] font-medium text-white/70 uppercase tracking-wider mb-1">Skills</p>
-              <div className="flex flex-wrap gap-0.5">
-                {skills.slice(0, 2).map((skill, index) => (
-                  <span
-                    key={index}
-                    className="px-1.5 py-0.5 bg-lime-500/80 backdrop-blur-sm text-white text-[8px] rounded-md border border-white/20 leading-tight"
-                  >
-                    {skill}
-                  </span>
-                ))}
-                {skills.length > 2 && (
-                  <span className="px-1.5 py-0.5 bg-lime-500/60 backdrop-blur-sm text-white text-[8px] rounded-md border border-white/20 leading-tight">
-                    +{skills.length - 2}
-                  </span>
-                )}
+            {skills && skills.length > 0 && (
+              <div className="mb-2">
+                <p className="text-[9px] font-medium text-gray-600 uppercase tracking-wider mb-1">Skills</p>
+                <div className="flex flex-wrap gap-1">
+                  {skills.slice(0, 3).map((skill, index) => (
+                    <span
+                      key={index}
+                      className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[9px] rounded border border-blue-200 leading-tight"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                  {skills.length > 3 && (
+                    <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[9px] rounded border border-blue-200 leading-tight">
+                      +{skills.length - 3} more
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Interests */}
-            <div>
-              <p className="text-[9px] font-medium text-white/70 uppercase tracking-wider mb-1">Interests</p>
-              <div className="flex flex-wrap gap-0.5">
-                {interests.slice(0, 2).map((interest, index) => (
-                  <span
-                    key={index}
-                    className="px-1.5 py-0.5 bg-green-500/80 backdrop-blur-sm text-white text-[8px] rounded-md border border-white/20 leading-tight"
-                  >
-                    {interest}
-                  </span>
-                ))}
-                {interests.length > 2 && (
-                  <span className="px-1.5 py-0.5 bg-green-500/60 backdrop-blur-sm text-white text-[8px] rounded-md border border-white/20 leading-tight">
-                    +{interests.length - 2}
-                  </span>
-                )}
+            {interests && interests.length > 0 && (
+              <div>
+                <p className="text-[9px] font-medium text-gray-600 uppercase tracking-wider mb-1">Interests</p>
+                <div className="flex flex-wrap gap-1">
+                  {interests.slice(0, 3).map((interest, index) => (
+                    <span
+                      key={index}
+                      className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[9px] rounded border border-purple-200 leading-tight"
+                    >
+                      {interest}
+                    </span>
+                  ))}
+                  {interests.length > 3 && (
+                    <span className="px-1.5 py-0.5 bg-purple-50 text-purple-600 text-[9px] rounded border border-purple-200 leading-tight">
+                      +{interests.length - 3} more
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Collaboration Potential */}
+            {matchData?.collaborationPotential && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 mt-2">
+                <p className="text-[9px] font-medium text-yellow-700 mb-1">🚀 Collaboration Potential:</p>
+                <p className="text-[10px] text-yellow-600 leading-relaxed">
+                  {matchData.collaborationPotential}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
