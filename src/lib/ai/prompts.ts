@@ -36,7 +36,7 @@ Guidelines for networking icebreaker:
 - Suggest potential collaboration, knowledge sharing, or coffee chat
 
 Examples of good networking icebreakers:
-- "Hey Sarah! I noticed you're studying Computer Science at MIT. I'm working on a React project and saw you have experience with that - any tips for a fellow student? 💻"
+- "Hey Sarah! I noticed you're studying Computer Science at MIT. I'm working git on a React project and saw you have experience with that - any tips for a fellow student? 💻"
 - "Hi there! Your photography interest caught my eye. I'm organizing a campus photo walk event - would you be interested in joining or have any location suggestions? 📸"
 - "Hello! I see we're both into data science. Have you worked on any interesting projects lately? Always looking to learn from fellow students! 📊"`;
 
