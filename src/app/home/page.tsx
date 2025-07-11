@@ -1,6 +1,6 @@
 
 "use client"
-import React from 'react'
+import React,{useEffect} from 'react'
 import SwipeCards from "@/components/ui/SwipeCards";
 import { useAuth } from "@/context/authContext";
 import { ChatBubbleLeftRightIcon, UserCircleIcon } from "@heroicons/react/24/outline";
@@ -8,6 +8,24 @@ import Link from 'next/link';
 
 
 const page = () => {
+      useEffect(() => {
+      const fetchData = async () => {
+        console.log('Fetching matchmaking data...');
+        try {
+          const response = await fetch('/api/matchmaking'); 
+          const data = await response.json();
+          console.log('Matchmaking API response:', data);
+          
+          // Test debug API as well
+          const debugResponse = await fetch('/api/debug-matchmaking');
+          const debugData = await debugResponse.json();
+          console.log('Debug API response:', debugData);
+        } catch (error) {
+          console.error('API fetch error:', error);
+        }
+      };
+      fetchData();
+    }, []);
   const {user,profile} = useAuth();
   console.log('Current user:', user);
   console.log('Current profile:', profile);
