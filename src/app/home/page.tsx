@@ -1,4 +1,3 @@
-
 "use client"
 import React,{useEffect} from 'react'
 import SwipeCards from "@/components/ui/SwipeCards";
@@ -15,6 +14,7 @@ const page = () => {
           const response = await fetch('/api/matchmaking'); 
           const data = await response.json();
           console.log('Matchmaking API response:', data);
+          console.log('data.')
           
           // Test debug API as well
           const debugResponse = await fetch('/api/debug-matchmaking');

@@ -74,6 +74,10 @@ Your task is to:
 1. RANK matches from highest to lowest compatibility (1st = best match, 2nd = second best, etc.)
 2. Provide detailed analysis of WHY each person is a great match
 3. Consider multiple compatibility factors with specific examples
+4. But make it a realistic and practical analysis, not just theoretical
+5. Also the analysis will be displayed to the user so it should be interesting and engaging e.g.You and John share a passion for AI and machine learning, with complementary skills - your Python expertise pairs perfectly with his React frontend skills. You're both Computer Science majors looking to build full-stack AI applications.
+6. Kindly make the analysis being displayed to the use very friendly and very informal
+7. Don't make it too formal or robotic, use a conversational tone
 
 RANKING CRITERIA (in order of importance):
 1. Shared academic interests and career goals (40% weight)
@@ -127,13 +131,22 @@ Please analyze these profiles and return the best matches for the current user.`
       
       console.log('Alle-AI response received');
       
-      // Parse the JSON response from AI
+    
       let matchingResults;
       try {
-        matchingResults = JSON.parse(aiResponse);
+        // Handle JSON wrapped in markdown code blocks
+        let jsonString = aiResponse;
+        
+        // Extract JSON from markdown code blocks if present
+        const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          jsonString = jsonMatch[1].trim();
+        }
+        
+        matchingResults = JSON.parse(jsonString);
       } catch (parseError) {
         console.error('Failed to parse AI response as JSON:', aiResponse);
-        // Fallback: return all profiles with basic ranking
+
         matchingResults = {
           matches: profilesFromDB?.slice(0, 5).map((profile, index) => ({
             rank: index + 1,
