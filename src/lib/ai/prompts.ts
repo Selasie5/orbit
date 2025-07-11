@@ -12,25 +12,21 @@ function getRandom<T>(arr: T[]): T {
 }
 
 const toneOptions = [
-  'casual and upbeat',
-  'playfully curious',
-  'chill but insightful',
-  'curious and thoughtful',
-  'lighthearted and energetic',
+  'friendly and warm like a quick campus chat',
+  'lively and kind with a Ghanaian touch',
+  'welcoming and fun like a uni hangout',
+  'engaging and easygoing like a group project vibe',
 ];
 
 const lengthOptions = [
-  'Keep it concise (under 50 words)',
-  'Aim for 60–80 words — just enough to be personal',
-  'Make it thoughtful but brief (under 100 words)',
+  'Keep it short and sweet (30–50 words)',
 ];
 
 const creativeChallenges = [
-  'Add a playful metaphor or analogy if it fits.',
-  'Pose a question they haven’t likely been asked before.',
-  'Incorporate a fun emoji that reflects one of their interests.',
-  'Use a single clever pun — but keep it tasteful.',
-  'Make it feel like the start of a great hallway conversation.',
+  'Mention a Ghanaian campus vibe, like a canteen meetup.',
+  'Ask a fun, simple question tied to their interests.',
+  'Add a 😊 or 🇬🇭 emoji for a friendly touch.',
+  'Make it feel like a quick chat before a lecture.',
 ];
 
 export function createIcebreakerPrompt(targetUser: UserProfile, currentUser?: Partial<UserProfile>): string {
@@ -38,7 +34,7 @@ export function createIcebreakerPrompt(targetUser: UserProfile, currentUser?: Pa
   const selectedLength = getRandom(lengthOptions);
   const selectedChallenge = getRandom(creativeChallenges);
 
-  const basePrompt = `Generate a personalized, friendly networking icebreaker message for a college networking app.`;
+  const basePrompt = `Generate a short, friendly networking icebreaker message for a college networking app that feels authentically Ghanaian and natural.`;
 
   const targetInfo = `
 Target person details:
@@ -58,12 +54,13 @@ Your details (for context):
 Instructions for writing:
 - ${selectedLength}
 - Use a ${selectedTone} tone
-- Mention something specific and unique from the target's profile
-- Ask a light, engaging question to spark conversation
-- Optionally suggest a shared interest or potential collaboration
-- Use 1–2 emojis (optional)
-- Avoid romance — this is for professional and social networking
-- Make the message feel original and not templated`;
+- Mention one specific thing from the target's profile
+- Ask a simple, engaging question to spark a chat
+- Suggest a casual connection, like grabbing food or a study vibe
+- Use 1 emoji (e.g., 😊, 🇬🇭, or 📚) for warmth
+- Avoid romantic vibes — this is for professional and social networking
+- Sound like a Ghanaian uni student, natural and friendly
+- Avoid heavy slang (e.g., no "chale" or "dey bee")`;
 
   const creativityPrompt = `
 Creative twist:
