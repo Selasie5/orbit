@@ -2,13 +2,9 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createServiceRoleClient } from "@/utils/supabase/service";
 import { cookies } from 'next/headers'
-// @ts-ignore: No type definitions for 'alle-ai-sdk'
-import { AlleAIClient } from 'alle-ai-sdk';
+import { callAlleAI } from '@/lib/ai/alle';
 
-
- 
 export async function GET(request: NextRequest) {
-
   try {
     // Create server-side Supabase client
     const supabase = createClient(cookies())
@@ -49,7 +45,6 @@ export async function GET(request: NextRequest) {
     console.log('Profiles fetched:', profilesFromDB?.length || 0);
     console.log('Profile data sample:', profilesFromDB?.[0]);
 
-  
     const { data: currentUserProfile, error: profileError } = await serviceClient
       .from('profiles')
       .select('*')
@@ -69,12 +64,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-   console.log("Initializing AI client")
-    const alleai = new AlleAIClient({
-      apiKey: process.env.NEXT_PUBLIC_ALLEAI_API_KEY,
-      baseURL:'https://api.alle-ai.com/api/v1/chat/completions'
-    });
-    console.log(process.env.NEXT_PUBLIC_ALLEAI_API_KEY);
     const systemPrompt = `You are an expert matchmaking AI that analyzes student profiles to find the best matches for collaboration, study partnerships, and networking.
 
 You will receive:
@@ -129,44 +118,15 @@ ${JSON.stringify(profilesFromDB, null, 2)}
 
 Please analyze these profiles and return the best matches for the current user.`;
 
+    const fullPrompt = `${systemPrompt}\n\n${userMessage}`;
+
     try {
       console.log('Calling Alle-AI for matchmaking analysis...');
       
-      const response = await alleai.chat.completions({
-        models: ["gpt-4o"],
-        messages: [
-          {
-            system: [
-              {
-                type: "text",
-                text: systemPrompt
-              }
-            ],
-            user: [
-              {
-                type: "text", 
-                text: userMessage
-              }
-            ]
-          }
-        ],
-        response_format: {
-          type: "text"
-        },
-        temperature: 0.7,
-        max_tokens: 2000,
-        stream: false
-      });
-
+      const aiResponse = await callAlleAI(fullPrompt);
+      
       console.log('Alle-AI response received');
       
-      // Extract the response content
-      const aiResponse = response?.responses?.responses?.["gpt-4o"]?.message?.content;
-      
-      if (!aiResponse) {
-        throw new Error('No response content from AI');
-      }
-
       // Parse the JSON response from AI
       let matchingResults;
       try {
@@ -241,9 +201,9 @@ Please analyze these profiles and return the best matches for the current user.`
         if (profile.skills && currentUserProfile.skills) {
           const userSkills = currentUserProfile.skills.toLowerCase().split(/[,\s]+/);
           const profileSkills = profile.skills.toLowerCase().split(/[,\s]+/);
-            const commonSkills: string[] = userSkills.filter((skill: string) => 
+          const commonSkills: string[] = userSkills.filter((skill: string) => 
             profileSkills.some((pSkill: string) => pSkill.includes(skill) || skill.includes(pSkill))
-            );
+          );
           
           if (commonSkills.length > 0) {
             matchScore += Math.min(25, commonSkills.length * 8);
@@ -256,9 +216,9 @@ Please analyze these profiles and return the best matches for the current user.`
         if (profile.interests && currentUserProfile.interests) {
           const userInterests = currentUserProfile.interests.toLowerCase().split(/[,\s]+/);
           const profileInterests = profile.interests.toLowerCase().split(/[,\s]+/);
-            const commonInterests: string[] = userInterests.filter((interest: string) => 
+          const commonInterests: string[] = userInterests.filter((interest: string) => 
             profileInterests.some((pInterest: string) => pInterest.includes(interest) || interest.includes(pInterest))
-            );
+          );
           
           if (commonInterests.length > 0) {
             matchScore += Math.min(25, commonInterests.length * 8);
@@ -285,7 +245,7 @@ Please analyze these profiles and return the best matches for the current user.`
         else if (matchScore >= 60) matchType = "Fair Match";
         
         return {
-          rank: index + 1, // Will be re-sorted
+          rank: index + 1,
           profileId: profile.id,
           matchScore: Math.min(100, matchScore),
           matchType,
@@ -315,11 +275,6 @@ Please analyze these profiles and return the best matches for the current user.`
       });
     }
 
-
-
-
-
-    
   } catch (error) {
     console.error('API error:', error);
     return new Response(JSON.stringify({ 

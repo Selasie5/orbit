@@ -19,8 +19,8 @@ class AlleAIClient {
     this.config = {
       apiKey: process.env.ALLE_AI_API_KEY || '',
       baseUrl: process.env.ALLE_AI_BASE_URL || 'https://api.alle-ai.com/api/v1',
-      model: 'gpt-3.5-turbo',
-      maxTokens: 150,
+      model: 'gpt-4o',
+      maxTokens: 2000,
       temperature: 0.7
     };
 
@@ -48,19 +48,23 @@ class AlleAIClient {
       });
 
       const requestBody = {
-        model: requestConfig.model,
+        models: [requestConfig.model],
         messages: [
           {
-            role: 'system',
-            content: 'You are a helpful assistant that creates engaging, friendly networking icebreaker messages for a fun college networking app. This is NOT a dating app - it\'s for students to connect professionally and socially in a casual, approachable way. Keep messages friendly, collaborative, and focused on shared interests, skills, or academic experiences. Include a question to encourage networking conversation.'
-          },
-          {
-            role: 'user',
-            content: prompt
+            user: [
+              {
+                type: "text",
+                text: prompt
+              }
+            ]
           }
         ],
+        response_format: {
+          type: "text"
+        },
         max_tokens: requestConfig.maxTokens,
         temperature: requestConfig.temperature,
+        stream: false
       };
 
       // Try different authentication approaches
@@ -68,8 +72,7 @@ class AlleAIClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${requestConfig.apiKey}`,
-          'X-API-Key': requestConfig.apiKey, // Alternative header
+          'X-API-KEY': requestConfig.apiKey,
         },
         body: JSON.stringify(requestBody),
       });
@@ -93,15 +96,21 @@ class AlleAIClient {
       const data = await response.json();
       console.log('📄 Response Data:', JSON.stringify(data, null, 2));
       
-      if (data.choices && data.choices[0] && data.choices[0].message) {
-        return {
-          success: true,
-          data: data.choices[0].message.content.trim()
-        };
-      } else {
-        console.error('❌ Unexpected response format:', data);
-        throw new Error('Invalid response format from Alle AI');
+      // Handle the new Alle-AI response format
+      if (data.success && data.responses && data.responses.responses) {
+        const responses = data.responses.responses;
+        const modelName = requestConfig.model || 'gpt-4o';
+        
+        if (responses[modelName] && responses[modelName].message && responses[modelName].message.content) {
+          return {
+            success: true,
+            data: responses[modelName].message.content.trim()
+          };
+        }
       }
+      
+      console.error('❌ Unexpected response format:', data);
+      throw new Error('Invalid response format from Alle AI');
 
     } catch (error) {
       console.error('❌ Alle AI API Error:', error);
@@ -170,14 +179,22 @@ const alleAIClient = new AlleAIClient();
 
 // Main function that will be called from the API route
 export async function callAlleAI(prompt: string): Promise<string> {
-  const response = await alleAIClient.generateText(prompt);
+  const response = await alleAIClient.generateText(prompt, {
+    maxTokens: 2000,
+    temperature: 0.7,
+    model: 'gpt-4o'
+  });
   
   if (response.success && response.data) {
     return response.data;
   } else {
-    // Fallback to template-based icebreaker if AI fails
+    // Fallback to template-based response if AI fails
     console.warn('⚠️ Alle AI failed, using fallback:', response.error);
-    return getNetworkingFallbackIcebreaker();
+    return JSON.stringify({
+      matches: [],
+      message: 'AI unavailable - using fallback matching',
+      fallback: true
+    });
   }
 }
 
