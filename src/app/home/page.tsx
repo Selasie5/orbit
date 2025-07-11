@@ -10,9 +10,19 @@ import Link from 'next/link';
 const page = () => {
       useEffect(() => {
       const fetchData = async () => {
-        const response = await fetch('/api/matchmaking'); 
-        const data = await response.json();
-        console.log(data);
+        console.log('Fetching matchmaking data...');
+        try {
+          const response = await fetch('/api/matchmaking'); 
+          const data = await response.json();
+          console.log('Matchmaking API response:', data);
+          
+          // Test debug API as well
+          const debugResponse = await fetch('/api/debug-matchmaking');
+          const debugData = await debugResponse.json();
+          console.log('Debug API response:', debugData);
+        } catch (error) {
+          console.error('API fetch error:', error);
+        }
       };
       fetchData();
     }, []);
