@@ -72,6 +72,7 @@ export async function GET(request: NextRequest) {
    console.log("Initializing AI client")
     const alleai = new AlleAIClient({
       apiKey: process.env.NEXT_PUBLIC_ALLEAI_API_KEY,
+      baseURL:'https://api.alle-ai.com/api/v1/chat/completions'
     });
     console.log(process.env.NEXT_PUBLIC_ALLEAI_API_KEY);
     const systemPrompt = `You are an expert matchmaking AI that analyzes student profiles to find the best matches for collaboration, study partnerships, and networking.
