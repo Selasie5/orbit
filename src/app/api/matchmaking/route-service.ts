@@ -5,10 +5,10 @@ import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
-    // Create server-side Supabase client
+    // Create server-side Supabase client for authentication
     const supabase = createClient(cookies())
 
-    // Get the current user
+    // Get the current user to verify authentication
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
     if (userError || !user) {
