@@ -119,23 +119,68 @@ async function createConversation({ user1Id, user2Id, matchedAt }: {
   return conversation;
 }
 
-async function generateAIIcebreaker({ targetUser }: {
+async function generateAIIcebreaker({ targetUser, currentUserId }: {
   targetUser: ProfileCard;
+  currentUserId?: string;
 }): Promise<string> {
-  // Generate personalized icebreaker based on user interests/skills
+  try {
+    const response = await fetch('/api/ai/icebreaker', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        targetUser: {
+          name: targetUser.name,
+          interests: targetUser.interests,
+          skills: targetUser.skills,
+          course: targetUser.course,
+          university: targetUser.university,
+          age: targetUser.age
+        },
+        currentUser: {
+          id: currentUserId,
+          // Add more current user context if available
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.icebreaker) {
+      return data.icebreaker;
+    } else {
+      throw new Error('No icebreaker returned from API');
+    }
+    
+  } catch (error) {
+    console.error('Error generating AI icebreaker:', error);
+    
+    // Fallback to template-based icebreaker
+    return generateFallbackIcebreaker(targetUser);
+  }
+}
+
+// Fallback function when AI fails
+function generateFallbackIcebreaker(targetUser: ProfileCard): string {
   const interests = targetUser.interests.slice(0, 2);
   const skills = targetUser.skills.slice(0, 2);
   
-  const icebreakers = [
-    `Hey ${targetUser.name}! I noticed you're into ${interests.join(' and ')}. What got you started with that? 😊`,
-    `Hi ${targetUser.name}! Your ${targetUser.course} studies sound fascinating! What's been your favorite project so far?`,
-    `Hello ${targetUser.name}! I see you have skills in ${skills.join(' and ')}. Any exciting projects you're working on? 🚀`,
-    `Hey there ${targetUser.name}! ${targetUser.university} has such a great reputation. How are you finding your time there?`,
-    `Hi ${targetUser.name}! I love that you're into ${interests[0]}. Do you have any recommendations for someone just getting started? ✨`
+  const networkingTemplates = [
+    `Hey ${targetUser.name}! I noticed you're into ${interests.join(' and ')}. I'm exploring those areas too - any resources or projects you'd recommend? 🚀`,
+    `Hi ${targetUser.name}! Your ${targetUser.course} studies sound fascinating! I'd love to hear about any cool projects you've worked on recently 💡`,
+    `Hello ${targetUser.name}! I see you have skills in ${skills.join(' and ')}. I'm working on something similar - would love to connect and maybe collaborate! ⚡`,
+    `Hey there ${targetUser.name}! ${targetUser.university} has such a great reputation. How are you finding the program? Always looking to connect with fellow students! 📚`,
+    `Hi ${targetUser.name}! Your background in ${interests[0]} looks really interesting. Any chance you'd want to grab coffee and chat about it sometime? ☕`,
+    `Hello! I see we might have some overlapping interests. Would love to connect and see if there are any collaboration opportunities! ✨`,
+    `Hey ${targetUser.name}! Your skill set looks impressive. I'm always looking to learn from other students - any tips for someone getting started? 🎯`
   ];
   
-  // Return a random icebreaker
-  return icebreakers[Math.floor(Math.random() * icebreakers.length)];
+  return networkingTemplates[Math.floor(Math.random() * networkingTemplates.length)];
 }
 
 async function sendMessage({ conversationId, senderId, message, isIcebreaker = false }: {
@@ -203,10 +248,10 @@ export function getUserProfileImage(userId: string, profileData: ProfileCard[]):
 }
 
 export function generateConversationPreview(lastMessage: Message | undefined): string {
-  if (!lastMessage) return 'Start a conversation...';
+if (!lastMessage) return 'Start networking...';
   
   if (lastMessage.isIcebreaker) {
-    return '🤖 AI Icebreaker sent';
+    return '🤖 Orbit Icebreaker sent';
   }
   
   // Truncate long messages

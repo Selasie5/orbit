@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Conversation, Message } from '@/types/chat'
 import { profileData } from '@/data/profileData'
 import { getMessagesByConversation, addMessage } from '@/data/chatData'
-import { 
-  getOtherUserId, 
-  getUserDisplayName, 
-  getUserProfileImage, 
+import {
+  getOtherUserId,
+  getUserDisplayName,
+  getUserProfileImage,
   formatTimestamp,
   markMessagesAsRead
 } from '@/actions/swipe/swipeRight'
@@ -38,7 +38,7 @@ const ChatWindow = ({
   useEffect(() => {
     const msgs = getMessagesByConversation(conversation.id)
     setConversationMessages(msgs)
-    
+
     // Mark messages as read
     markMessagesAsRead(conversation.id, currentUserId, messages)
   }, [conversation.id, messages, currentUserId])
@@ -88,13 +88,13 @@ const ChatWindow = ({
             <ArrowLeftIcon className="h-5 w-5 text-lime-700" />
           </button>
         )}
-        
+
         <img
           src={otherUserImage}
           alt={otherUserName}
           className="w-10 h-10 rounded-full object-cover border-2 border-lime-200"
         />
-        
+
         <div>
           <h2 className="font-semibold text-green-900">{otherUserName}</h2>
           <p className="text-sm text-green-600">Online now</p>
@@ -117,16 +117,16 @@ const ChatWindow = ({
                 <div
                   className={`
                     px-4 py-2 rounded-2xl
-                    ${isCurrentUser 
-                      ? 'bg-lime-500 text-white' 
-                      : isAI 
+                    ${isCurrentUser
+                      ? 'bg-lime-500 text-white'
+                      : isAI
                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                         : 'bg-white text-green-900 border border-lime-200'
                     }
                   `}
                 >
                   {isAI && (
-                    <div className="text-xs opacity-75 mb-1">🤖 AI Icebreaker</div>
+                    <div className="text-xs opacity-75 mb-1">🤖 AI Networking Icebreaker</div>
                   )}
                   <p className="text-sm">{message.content}</p>
                 </div>
