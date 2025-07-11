@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Initialize Alle-AI client
+   console.log("Initializing AI client")
     const alleai = new AlleAIClient({
       apiKey: process.env.NEXT_PUBLIC_ALLEAI_API_KEY,
     });
