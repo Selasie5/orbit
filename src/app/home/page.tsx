@@ -1,66 +1,68 @@
-
 "use client"
-import React,{useEffect} from 'react'
+import React, { useEffect } from 'react'
 import SwipeCards from "@/components/ui/SwipeCards";
 import { useAuth } from "@/context/authContext";
 import { ChatBubbleLeftRightIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import Link from 'next/link';
 
-
 const page = () => {
-      useEffect(() => {
-      const fetchData = async () => {
-        console.log('Fetching matchmaking data...');
-        try {
-          const response = await fetch('/api/matchmaking'); 
-          const data = await response.json();
-          console.log('Matchmaking API response:', data);
-          
-          // Test debug API as well
-          const debugResponse = await fetch('/api/debug-matchmaking');
-          const debugData = await debugResponse.json();
-          console.log('Debug API response:', debugData);
-        } catch (error) {
-          console.error('API fetch error:', error);
-        }
-      };
-      fetchData();
-    }, []);
-  const {user,profile} = useAuth();
+  useEffect(() => {
+    const fetchData = async () => {
+      console.log('Fetching matchmaking data...');
+      try {
+        const response = await fetch('/api/matchmaking'); 
+        const data = await response.json();
+        console.log('Matchmaking API response:', data);
+        
+        // Test debug API as well
+        const debugResponse = await fetch('/api/debug-matchmaking');
+        const debugData = await debugResponse.json();
+        console.log('Debug API response:', debugData);
+      } catch (error) {
+        console.error('API fetch error:', error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const { user, profile } = useAuth();
   console.log('Current user:', user);
   console.log('Current profile:', profile);
+
   return (
-     <div className="flex flex-col min-h-screen">
-           {/* Header */}
-           <header className="flex items-center justify-between px-8 py-6 bg-gradient-to-r from-slate-50 to-white border-b border-gray-200/50">
-             <div className="flex items-center">
-               <h1 className="text-3xl font-bold bg-gradient-to-r from-lime-600 to-green-600 bg-clip-text text-transparent">
-                 Orbit
-               </h1>
-             </div>
-             
-             <div className="flex items-center gap-3">
-               <Link 
-                 href="/auth/signup/profile" 
-                 className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
-               >
-                 <UserCircleIcon className="w-6 h-6 text-white" />
-               </Link>
-               
-               <Link 
-                 href="/chat" 
-                 className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-lime-500 to-green-600 hover:from-lime-600 hover:to-green-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
-               >
-                 <ChatBubbleLeftRightIcon className="w-6 h-6 text-white" />
-               </Link>
-             </div>
-           </header>
-   
-           {/* Main Content */}
-           <div className="flex-1 flex flex-col justify-center items-center">
-             <SwipeCards />
-           </div>
-         </div>
+    <div className="flex flex-col min-h-screen">
+      {/* Header */}
+      <header className="flex items-center justify-between px-8 py-6 bg-gradient-to-r from-slate-50 to-white border-b border-gray-200/50">
+        <div className="flex items-center">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-lime-600 to-green-600 bg-clip-text text-transparent">
+            Orbit
+          </h1>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          {/* Profile button */}
+          <Link 
+            href="/auth/signup/profile" 
+            className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+          >
+            <UserCircleIcon className="w-6 h-6 text-white" />
+          </Link>
+          
+          {/* Chat button */}
+          <Link 
+            href="/chat" 
+            className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-lime-500 to-green-600 hover:from-lime-600 hover:to-green-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+          >
+            <ChatBubbleLeftRightIcon className="w-6 h-6 text-white" />
+          </Link>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col justify-center items-center">
+        <SwipeCards />
+      </div>
+    </div>
   )
 }
 

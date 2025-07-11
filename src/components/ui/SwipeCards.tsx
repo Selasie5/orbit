@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { Card as ProfileCard, profileData } from "@/data/profileData";
+import { useSwipe } from "@/context/SwipeContext";
 import SwipeStack from "./SwipeStack";
 
 const SwipeCards = () => {
-  const [cards, setCards] = useState<ProfileCard[]>(profileData);
-  const [lastRemovedCard, setLastRemovedCard] = useState<ProfileCard | null>(null);
+  const { cards, setCards, lastRemovedCard, setLastRemovedCard } = useSwipe();
 
   return (
     <SwipeStack

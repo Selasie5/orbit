@@ -1,9 +1,10 @@
-import React, { Dispatch, SetStateAction } from "react";
+import React from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { Card as ProfileCard } from "@/data/profileData";
 import { handleSwipeRight } from "@/actions/swipe/swipeRight";
 import { handleSwipeLeft } from "@/actions/swipe/swipeLeft";
 import { useAuth } from "@/context/authContext";
+import { useSwipe } from "@/context/SwipeContext";
 
 interface SwipeCardProps {
   id: number;
@@ -14,9 +15,6 @@ interface SwipeCardProps {
   skills: string[];
   interests: string[];
   age: number;
-  setCards: Dispatch<SetStateAction<ProfileCard[]>>;
-  cards: ProfileCard[];
-  setLastRemovedCard: Dispatch<SetStateAction<ProfileCard | null>>;
 }
 
 const SwipeCard = ({
@@ -28,11 +26,9 @@ const SwipeCard = ({
   skills,
   interests,
   age,
-  setCards,
-  cards,
-  setLastRemovedCard,
 }: SwipeCardProps) => {
   const { user } = useAuth();
+  const { cards, setCards, setLastRemovedCard } = useSwipe();
   const x = useMotionValue(0);
 
   const rotateRaw = useTransform(x, [-150, 150], [-18, 18]);
@@ -46,59 +42,56 @@ const SwipeCard = ({
   });
 
   const handleDragEnd = () => {
-  if (Math.abs(x.get()) > 100) {
-    const targetUser: ProfileCard = {
-      id,
-      name,
-      profileImage,
-      course,
-      university,
-      skills,
-      interests,
-      age,
-    };
+    if (Math.abs(x.get()) > 100) {
+      const targetUser: ProfileCard = {
+        id,
+        name,
+        profileImage,
+        course,
+        university,
+        skills,
+        interests,
+        age,
+      };
 
-    if (x.get() > 0) {
-      // Swipe Right (Like) - Creates conversation immediately
-      handleSwipeRight({
-        cardId: id,
-        targetUser,
-        currentUserId: user?.id || '',
-        setCards,
-        setLastRemovedCard,
-        cards,
-        swipeMethod: 'drag',
-        onSwipeComplete: (action, user, conversation) => {
-          console.log(`✅ ${action} completed for ${user.name} - Conversation: ${conversation.id}`);
-        },
-        onConversationCreated: (conversation) => {
-          console.log(`💬 Ready to chat with ${targetUser.name}! Conversation ID: ${conversation.id}`);
-          // TODO: Could navigate to chat or show notification
-        },
-        onError: (error) => {
-          console.error('Swipe right error:', error);
-        }
-      });
-    } else {
-      // Swipe Left (Reject) - existing code unchanged
-      handleSwipeLeft({
-        cardId: id,
-        targetUser,
-        currentUserId: user?.id || '',
-        setCards,
-        setLastRemovedCard,
-        cards,
-        swipeMethod: 'drag',
-        onSwipeComplete: (action, user) => {
-          console.log(`Swipe ${action} completed for ${user.name}`);
-        },
-        onError: (error) => {
-          console.error('Swipe left error:', error);
-        }
-      });
+      if (x.get() > 0) {
+        handleSwipeRight({
+          cardId: id,
+          targetUser,
+          currentUserId: user?.id || '',
+          setCards,
+          setLastRemovedCard,
+          cards,
+          swipeMethod: 'drag',
+          onSwipeComplete: (action, user, conversation) => {
+            console.log(`✅ ${action} completed for ${user.name} - Conversation: ${conversation.id}`);
+          },
+          onConversationCreated: (conversation) => {
+            console.log(`💬 Ready to chat with ${targetUser.name}! Conversation ID: ${conversation.id}`);
+          },
+          onError: (error) => {
+            console.error('Swipe right error:', error);
+          }
+        });
+      } else {
+        handleSwipeLeft({
+          cardId: id,
+          targetUser,
+          currentUserId: user?.id || '',
+          setCards,
+          setLastRemovedCard,
+          cards,
+          swipeMethod: 'drag',
+          onSwipeComplete: (action, user) => {
+            console.log(`Swipe ${action} completed for ${user.name}`);
+          },
+          onError: (error) => {
+            console.error('Swipe left error:', error);
+          }
+        });
+      }
     }
-  }
-};
+  };
 
   return (
     <motion.div
