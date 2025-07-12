@@ -72,7 +72,7 @@ const LoginPage = () => {
   
   return (
    <main className='flex flex-col justify-center items-center  w-full min-h-screen'>
-<div className='flex flex-col justify-center items-start bg-white text-black p-8 rounded-lg shadow-lg w-1/2 h-auto'>
+<div className='flex flex-col justify-center items-start bg-white text-black p-8 rounded-lg shadow-lg w-1/2 md:w-full h-auto'>
 <h1 className='text-2xl font-semibold'>Welcome back to Orbit</h1>
 <p className='text-gray-500 text-sm'>Log in to pick up where you left off - your network is waiting for you.</p>
 <div className='flex flex-col justify-center items-start w-full mt-4 gap-4'>
