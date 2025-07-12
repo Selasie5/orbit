@@ -6,16 +6,30 @@ import { Conversation, Message } from '@/types/chat'
 import { getConversationsForUser, getAllMessages } from '@/data/chatData'
 import ConversationList from '@/components/chat/ConversationList'
 import ChatWindow from '@/components/chat/ChatWindow'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 
 const ChatPage = () => {
-  const { user, loading } = useAuth()
+  const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [messages, setMessages] = useState<Message[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await signOut();
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   // Check if user is authenticated
   useEffect(() => {
@@ -64,17 +78,29 @@ const ChatPage = () => {
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-lime-50 to-green-50">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-lime-200 px-4 py-3 flex items-center gap-4">
-        <Link 
-          href="/home" 
-          className="p-2 hover:bg-lime-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="h-5 w-5 text-lime-700" />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold text-green-900">Messages</h1>
-          <p className="text-sm text-green-600">{conversations.length} conversations</p>
+      <div className="bg-white/80 backdrop-blur-sm border-b border-lime-200 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link 
+            href="/home" 
+            className="p-2 hover:bg-lime-100 rounded-lg transition-colors"
+          >
+            <ArrowLeftIcon className="h-5 w-5 text-lime-700" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-green-900">Messages</h1>
+            <p className="text-sm text-green-600">{conversations.length} conversations</p>
+          </div>
         </div>
+        
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white rounded-lg transition-colors text-sm font-medium"
+        >
+          <ArrowRightOnRectangleIcon className="h-4 w-4" />
+          {loggingOut ? 'Signing out...' : 'Logout'}
+        </button>
       </div>
 
       {/* Main Chat Interface */}

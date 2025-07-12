@@ -3,12 +3,11 @@ import React, { useEffect } from 'react'
 import SwipeCards from "@/components/ui/SwipeCards";
 import { useAuth } from "@/context/authContext";
 import { useRouter } from 'next/navigation';
-import { ChatBubbleLeftRightIcon, UserCircleIcon } from "@heroicons/react/24/outline";
+import { ChatBubbleLeftRightIcon, UserCircleIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 import Link from 'next/link';
 
 const page = () => {
-
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const router = useRouter();
 
   console.log('Home page render - Auth state:', { 
@@ -17,6 +16,16 @@ const page = () => {
     loading,
     userId: user?.id 
   });
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   // Protect the route - redirect if not authenticated
   useEffect(() => {
@@ -81,6 +90,15 @@ const page = () => {
           >
             <ChatBubbleLeftRightIcon className="w-6 h-6 text-white" />
           </Link>
+
+          {/* Logout button */}
+          <button 
+            onClick={handleLogout}
+            className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+            title="Logout"
+          >
+            <ArrowRightOnRectangleIcon className="w-6 h-6 text-white" />
+          </button>
         </div>
       </header>
 

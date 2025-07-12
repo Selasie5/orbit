@@ -13,10 +13,10 @@ const page = () => {
     if (!loading) {
       if (user) {
         console.log('User authenticated, redirecting to /home');
-        router.replace('/home'); // Use replace instead of push to avoid back button issues
+        router.push('/home'); // Use replace instead of push to avoid back button issues
       } else {
         console.log('No user found, redirecting to /auth/login');
-        router.replace('/auth/login'); // Use replace instead of push
+        router.push('/auth/login'); // Use replace instead of push
       }
     }
   }, [user, loading, router]); // Use user.id instead of user object
