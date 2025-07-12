@@ -1,4 +1,4 @@
-import { io } from "socket.io-client";
+import io from "socket.io-client";
 
 // Get the base URL and path from the env variable
 const socketUrl = process.env.NEXT_PUBLIC_ORBIT_WEB_SOCKET_URI;
@@ -8,7 +8,7 @@ const socketUrl = process.env.NEXT_PUBLIC_ORBIT_WEB_SOCKET_URI;
 // and path is /api/socketio
 
 const url = socketUrl?.replace(/\/api\/socketio$/, "") || "";
-const path = "/api/socketio";
+const path = socketUrl;
 
 const socket = io(url, {
   path,

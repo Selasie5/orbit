@@ -78,14 +78,13 @@ const SwipeStack = ({
             university={card.university}
             skills={card.skills}
             interests={card.interests}
-            age={card.age}
             matchData={card.matchData}
             profile={card.profile}
             cards={cards}
             setCards={setCards}
             lastRemovedCard={lastRemovedCard}
             setLastRemovedCard={setLastRemovedCard}
-            user={user} // Pass user context
+            user1={user} // Pass user context
           />
         ))}
       </div>

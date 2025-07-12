@@ -10,6 +10,8 @@ interface SwipeCardProps extends MatchedProfile {
   setCards: Dispatch<SetStateAction<MatchedProfile[]>>;
   cards: MatchedProfile[];
   setLastRemovedCard: Dispatch<SetStateAction<MatchedProfile | null>>;
+  lastRemovedCard: any;
+  user1: any;
 }
 
 const SwipeCard = ({
@@ -24,7 +26,9 @@ const SwipeCard = ({
   profile,
   setCards,
   cards,
+  lastRemovedCard,
   setLastRemovedCard,
+  user1,
 }: SwipeCardProps) => {
   const { user, profile: currentUserProfile } = useAuth();
 

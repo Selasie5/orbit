@@ -10,7 +10,6 @@ interface SwipeRightParams {
   
   // Current user context
   currentUserId: string; // From auth context
-  // @ts-ignore
   currentUserProfile?: any; // Current user's profile data from auth context
   
   // State management functions
@@ -43,6 +42,8 @@ export const handleSwipeRight = async ({
   onConversationCreated
 }: SwipeRightParams) => {
   try {
+
+
     // 1. Remove card from UI immediately for smooth UX
     setLastRemovedCard(targetUser);
     setCards(prev => prev.filter(card => card.id !== cardId));
@@ -159,7 +160,6 @@ async function generateAIIcebreaker({ targetUser, currentUserId }: {
           skills: targetUser.skills,
           course: targetUser.course,
           university: targetUser.university,
-          age: targetUser.age
         },
         currentUser: {
           id: currentUserId,
