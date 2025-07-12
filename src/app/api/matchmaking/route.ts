@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createServiceRoleClient } from "@/utils/supabase/service";
 import { cookies } from 'next/headers'
 import { callAlleAI } from '@/lib/ai/alle';
+import { getConversationsForUser } from '@/data/chatData';
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,6 +46,20 @@ export async function GET(request: NextRequest) {
     console.log('Profiles fetched:', profilesFromDB?.length || 0);
     console.log('Profile data sample:', profilesFromDB?.[0]);
 
+    // Filter out users who already have conversations with the current user
+    const existingConversations = getConversationsForUser(user.id);
+    const conversationUserIds = new Set(
+      existingConversations.flatMap(conv => [conv.user1Id, conv.user2Id])
+        .filter(id => id !== user.id) // Remove current user's ID
+    );
+    
+    const availableProfiles = profilesFromDB?.filter(profile => 
+      !conversationUserIds.has(profile.id)
+    ) || [];
+    
+    console.log('Available profiles after filtering conversations:', availableProfiles.length);
+    console.log('Filtered out users with existing conversations:', conversationUserIds.size);
+
     const { data: currentUserProfile, error: profileError } = await serviceClient
       .from('profiles')
       .select('*')
@@ -52,12 +67,12 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (profileError || !currentUserProfile) {
-      console.log('Current user profile not found, returning all profiles');
+      console.log('Current user profile not found, returning all available profiles');
       return new Response(JSON.stringify({ 
-        profiles: profilesFromDB || [],
-        count: profilesFromDB?.length || 0,
+        profiles: availableProfiles || [],
+        count: availableProfiles?.length || 0,
         currentUser: user.id,
-        message: 'No user profile found, returning all profiles'
+        message: 'No user profile found, returning all available profiles'
       }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -74,6 +89,10 @@ Your task is to:
 1. RANK matches from highest to lowest compatibility (1st = best match, 2nd = second best, etc.)
 2. Provide detailed analysis of WHY each person is a great match
 3. Consider multiple compatibility factors with specific examples
+4. But make it a realistic and practical analysis, not just theoretical
+5. Also the analysis will be displayed to the user so it should be interesting and engaging e.g.You and John share a passion for AI and machine learning, with complementary skills - your Python expertise pairs perfectly with his React frontend skills. You're both Computer Science majors looking to build full-stack AI applications.
+6. Kindly make the analysis being displayed to the use very friendly and very informal
+7. Don't make it too formal or robotic, use a conversational tone
 
 RANKING CRITERIA (in order of importance):
 1. Shared academic interests and career goals (40% weight)
@@ -114,7 +133,7 @@ IMPORTANT RULES:
 ${JSON.stringify(currentUserProfile, null, 2)}
 
 Available profiles to match:
-${JSON.stringify(profilesFromDB, null, 2)}
+${JSON.stringify(availableProfiles, null, 2)}
 
 Please analyze these profiles and return the best matches for the current user.`;
 
@@ -127,15 +146,24 @@ Please analyze these profiles and return the best matches for the current user.`
       
       console.log('Alle-AI response received');
       
-      // Parse the JSON response from AI
+    
       let matchingResults;
       try {
-        matchingResults = JSON.parse(aiResponse);
+        // Handle JSON wrapped in markdown code blocks
+        let jsonString = aiResponse;
+        
+        // Extract JSON from markdown code blocks if present
+        const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          jsonString = jsonMatch[1].trim();
+        }
+        
+        matchingResults = JSON.parse(jsonString);
       } catch (parseError) {
         console.error('Failed to parse AI response as JSON:', aiResponse);
-        // Fallback: return all profiles with basic ranking
+
         matchingResults = {
-          matches: profilesFromDB?.slice(0, 5).map((profile, index) => ({
+          matches: availableProfiles?.slice(0, 5).map((profile, index) => ({
             rank: index + 1,
             profileId: profile.id,
             matchScore: 75 - (index * 5),
@@ -155,7 +183,7 @@ Please analyze these profiles and return the best matches for the current user.`
 
       // Enhance matches with full profile data
       const enhancedMatches = matchingResults.matches?.map((match: any) => {
-        const fullProfile = profilesFromDB?.find(p => p.id === match.profileId);
+        const fullProfile = availableProfiles?.find(p => p.id === match.profileId);
         return {
           ...match,
           profile: fullProfile
@@ -168,7 +196,7 @@ Please analyze these profiles and return the best matches for the current user.`
         currentUser: user.id,
         currentUserProfile: currentUserProfile,
         message: 'AI-powered matchmaking completed',
-        totalProfilesAnalyzed: profilesFromDB?.length || 0
+        totalProfilesAnalyzed: availableProfiles?.length || 0
       }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -178,7 +206,7 @@ Please analyze these profiles and return the best matches for the current user.`
       console.error('Alle-AI error:', aiError);
       
       // Intelligent fallback: analyze profiles programmatically
-      const intelligentMatches = profilesFromDB?.map((profile, index) => {
+      const intelligentMatches = availableProfiles?.map((profile, index) => {
         let matchScore = 50; // Base score
         const reasons = [];
         const highlights = [];

@@ -1,26 +1,28 @@
 import { Card as ProfileCard } from '@/data/profileData';
-import { Conversation, Message } from '@/types/chat';
+import { MatchedProfile } from '@/components/ui/SwipeCards';
+import { Conversation, Message, ChatUser } from '@/types/chat';
 import { addConversation, addMessage, getConversationsBetweenUsers } from '@/data/chatData';
 
 interface SwipeRightParams {
   // Card being swiped
-  cardId: number;
-  targetUser: ProfileCard;
+  cardId: string; // Changed to string to support UUIDs
+  targetUser: MatchedProfile; // Use MatchedProfile instead of ProfileCard
   
   // Current user context
   currentUserId: string; // From auth context
+  currentUserProfile?: any; // Current user's profile data from auth context
   
   // State management functions
-  setCards: React.Dispatch<React.SetStateAction<ProfileCard[]>>;
-  setLastRemovedCard: React.Dispatch<React.SetStateAction<ProfileCard | null>>;
-  cards: ProfileCard[];
+  setCards: React.Dispatch<React.SetStateAction<MatchedProfile[]>>;
+  setLastRemovedCard: React.Dispatch<React.SetStateAction<MatchedProfile | null>>;
+  cards: MatchedProfile[];
   
   // Optional: Analytics/tracking
   timestamp?: Date;
   swipeMethod?: 'drag' | 'button'; // How the swipe was triggered
   
   // Optional: Callback functions
-  onSwipeComplete?: (action: 'like', targetUser: ProfileCard, conversation: Conversation) => void;
+  onSwipeComplete?: (action: 'like', targetUser: MatchedProfile, conversation: Conversation) => void;
   onError?: (error: Error) => void;
   onConversationCreated?: (conversation: Conversation) => void;
 }
@@ -29,6 +31,7 @@ export const handleSwipeRight = async ({
   cardId,
   targetUser,
   currentUserId,
+  currentUserProfile,
   setCards,
   setLastRemovedCard,
   cards,
@@ -59,7 +62,9 @@ export const handleSwipeRight = async ({
       conversation = await createConversation({
         user1Id: currentUserId,
         user2Id: cardId.toString(),
-        matchedAt: timestamp
+        matchedAt: timestamp,
+        user1Profile: currentUserProfile,
+        user2Profile: targetUser.profile || targetUser // Pass the profile data
       });
       console.log('✨ New conversation created:', conversation.id);
       
@@ -100,17 +105,34 @@ export const handleSwipeRight = async ({
 
 // Helper Functions
 
-async function createConversation({ user1Id, user2Id, matchedAt }: {
+async function createConversation({ user1Id, user2Id, matchedAt, user1Profile, user2Profile }: {
   user1Id: string;
   user2Id: string;
   matchedAt: Date;
+  user1Profile?: any; // The current user's profile data
+  user2Profile?: any; // The matched user's profile data
 }): Promise<Conversation> {
   const conversation: Conversation = {
     id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     user1Id,
     user2Id,
     createdAt: matchedAt,
-    isActive: true
+    isActive: true,
+    // Store profile data for easy access
+    user1Profile: user1Profile ? {
+      id: user1Profile.id || user1Id,
+      name: getUserDisplayNameFromProfile(user1Profile),
+      profileImage: getUserProfileImageFromProfile(user1Profile),
+      course: user1Profile.course,
+      university: user1Profile.university
+    } : undefined,
+    user2Profile: user2Profile ? {
+      id: user2Profile.id || user2Id,
+      name: getUserDisplayNameFromProfile(user2Profile),
+      profileImage: getUserProfileImageFromProfile(user2Profile),
+      course: user2Profile.course,
+      university: user2Profile.university
+    } : undefined
   };
   
   // Add to mock storage (replace with API call)
@@ -120,7 +142,7 @@ async function createConversation({ user1Id, user2Id, matchedAt }: {
 }
 
 async function generateAIIcebreaker({ targetUser, currentUserId }: {
-  targetUser: ProfileCard;
+  targetUser: MatchedProfile;
   currentUserId?: string;
 }): Promise<string> {
   try {
@@ -166,7 +188,7 @@ async function generateAIIcebreaker({ targetUser, currentUserId }: {
 }
 
 // Fallback function when AI fails
-function generateFallbackIcebreaker(targetUser: ProfileCard): string {
+function generateFallbackIcebreaker(targetUser: MatchedProfile): string {
   const interests = targetUser.interests.slice(0, 2);
   const skills = targetUser.skills.slice(0, 2);
   
@@ -207,7 +229,7 @@ async function sendMessage({ conversationId, senderId, message, isIcebreaker = f
   return newMessage;
 }
 
-function showConversationNotification(targetUser: ProfileCard) {
+function showConversationNotification(targetUser: MatchedProfile) {
   // Show notification that conversation is ready
   console.log(`💬 Conversation ready with ${targetUser.name}! Check your chats.`);
   
@@ -238,13 +260,64 @@ export function formatTimestamp(date: Date): string {
 }
 
 export function getUserDisplayName(userId: string, profileData: ProfileCard[]): string {
+  // First try to find in cached profile data (for backward compatibility)
   const user = profileData.find(p => p.id.toString() === userId);
-  return user ? user.name : 'Unknown User';
+  if (user) return user.name;
+  
+  // For UUID-based users, we need to fetch from database
+  // This is a temporary fallback - ideally we should pass the actual profile data
+  return 'Loading...';
 }
 
 export function getUserProfileImage(userId: string, profileData: ProfileCard[]): string {
+  // First try to find in cached profile data (for backward compatibility)
   const user = profileData.find(p => p.id.toString() === userId);
-  return user ? user.profileImage : '/default-avatar.png';
+  if (user) return user.profileImage;
+  
+  // For UUID-based users, we need to fetch from database
+  // This is a temporary fallback - ideally we should pass the actual profile data
+  return '/default-avatar.png';
+}
+
+// Enhanced functions that work with actual user profiles
+export function getUserDisplayNameFromProfile(profile: any): string {
+  return profile?.full_name || profile?.name || 'Unknown User';
+}
+
+export function getUserProfileImageFromProfile(profile: any): string {
+  return profile?.avatar_url || profile?.profileImage || `https://images.unsplash.com/photo-1494790108755-6d2b9d80580a?q=80&w=400&auto=format&fit=crop`;
+}
+
+// Enhanced conversation helper functions
+export function getOtherUserProfile(conversation: Conversation, currentUserId: string): ChatUser | null {
+  if (conversation.user1Id === currentUserId && conversation.user2Profile) {
+    return conversation.user2Profile;
+  } else if (conversation.user2Id === currentUserId && conversation.user1Profile) {
+    return conversation.user1Profile;
+  }
+  return null;
+}
+
+export function getUserDisplayNameFromConversation(conversation: Conversation, currentUserId: string, fallbackProfileData: ProfileCard[]): string {
+  const otherUserProfile = getOtherUserProfile(conversation, currentUserId);
+  if (otherUserProfile) {
+    return otherUserProfile.name;
+  }
+  
+  // Fallback to old method
+  const otherUserId = getOtherUserId(conversation, currentUserId);
+  return getUserDisplayName(otherUserId, fallbackProfileData);
+}
+
+export function getUserProfileImageFromConversation(conversation: Conversation, currentUserId: string, fallbackProfileData: ProfileCard[]): string {
+  const otherUserProfile = getOtherUserProfile(conversation, currentUserId);
+  if (otherUserProfile) {
+    return otherUserProfile.profileImage;
+  }
+  
+  // Fallback to old method
+  const otherUserId = getOtherUserId(conversation, currentUserId);
+  return getUserProfileImage(otherUserId, fallbackProfileData);
 }
 
 export function generateConversationPreview(lastMessage: Message | undefined): string {

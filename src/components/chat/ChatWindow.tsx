@@ -7,8 +7,9 @@ import {
   getOtherUserId,
   getUserDisplayName,
   getUserProfileImage,
-  formatTimestamp,
-  markMessagesAsRead
+  getUserDisplayNameFromConversation,
+  getUserProfileImageFromConversation,
+  formatTimestamp
 } from '@/actions/swipe/swipeRight'
 import { ArrowLeftIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
 
@@ -34,8 +35,8 @@ const ChatWindow = ({
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const otherUserId = getOtherUserId(conversation, currentUserId)
-  const otherUserName = getUserDisplayName(otherUserId, profileData)
-  const otherUserImage = getUserProfileImage(otherUserId, profileData)
+  const otherUserName = getUserDisplayNameFromConversation(conversation, currentUserId, profileData)
+  const otherUserImage = getUserProfileImageFromConversation(conversation, currentUserId, profileData)
 
   useEffect(() => {
   fetch("/api/socketio"); // Ensure the server is initialized
@@ -68,10 +69,10 @@ const ChatWindow = ({
   useEffect(() => {
     const msgs = getMessagesByConversation(conversation.id)
     setConversationMessages(msgs)
-
-    // Mark messages as read
-    markMessagesAsRead(conversation.id, currentUserId, messages)
-  }, [conversation.id, messages, currentUserId])
+    
+    // Note: We removed markMessagesAsRead call to prevent infinite re-renders
+    // Messages can be marked as read in the parent component if needed
+  }, [conversation.id, currentUserId])
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {

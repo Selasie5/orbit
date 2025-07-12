@@ -2,30 +2,56 @@
 import React, { useEffect } from 'react'
 import SwipeCards from "@/components/ui/SwipeCards";
 import { useAuth } from "@/context/authContext";
+import { useRouter } from 'next/navigation';
 import { ChatBubbleLeftRightIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import Link from 'next/link';
 
 const page = () => {
-  useEffect(() => {
-    const fetchData = async () => {
-      console.log('Fetching matchmaking data...');
-      try {
-        const response = await fetch('/api/matchmaking'); 
-        const data = await response.json();
-        console.log('Matchmaking API response:', data);
-        
-        // Test debug API as well
-        const debugResponse = await fetch('/api/debug-matchmaking');
-        const debugData = await debugResponse.json();
-        console.log('Debug API response:', debugData);
-      } catch (error) {
-        console.error('API fetch error:', error);
-      }
-    };
-    fetchData();
-  }, []);
 
-  const { user, profile } = useAuth();
+  const { user, profile, loading } = useAuth();
+  const router = useRouter();
+
+  console.log('Home page render - Auth state:', { 
+    hasUser: !!user, 
+    hasProfile: !!profile, 
+    loading,
+    userId: user?.id 
+  });
+
+  // Protect the route - redirect if not authenticated
+  useEffect(() => {
+    console.log('Auth effect triggered:', { loading, hasUser: !!user });
+    
+    if (!loading) {
+      if (!user) {
+        console.log('No user found, redirecting to login');
+        router.push('/auth/login');
+      } else {
+        console.log('User authenticated, staying on home page');
+      }
+    }
+  }, [user?.id, loading, router]); // Use user.id instead of user object to prevent reference changes
+
+  // Remove the API fetch useEffect - let SwipeCards handle this when user clicks the button
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lime-50 to-green-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if no user (will redirect)
+  if (!user) {
+    return null;
+  }
+
+
   console.log('Current user:', user);
   console.log('Current profile:', profile);
 

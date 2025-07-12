@@ -1,16 +1,19 @@
 import React, { useState } from "react";
-import { Card as ProfileCard } from "@/data/profileData";
 import SwipeCard from "./SwipeCard";
 import SwipeActions from "./SwipeActions";
+
 import { handleSwipeRight } from "@/actions/swipe/swipeRight";
 import { handleSwipeLeft } from "@/actions/swipe/swipeLeft";
 import { useAuth } from "@/context/authContext";
 
+import { MatchedProfile } from "./SwipeCards";
+
+
 interface SwipeStackProps {
-  cards: ProfileCard[];
-  setCards: React.Dispatch<React.SetStateAction<ProfileCard[]>>;
-  lastRemovedCard: ProfileCard | null;
-  setLastRemovedCard: React.Dispatch<React.SetStateAction<ProfileCard | null>>;
+  cards: MatchedProfile[];
+  setCards: React.Dispatch<React.SetStateAction<MatchedProfile[]>>;
+  lastRemovedCard: MatchedProfile | null;
+  setLastRemovedCard: React.Dispatch<React.SetStateAction<MatchedProfile | null>>;
 }
 
 const SwipeStack = ({
@@ -64,7 +67,7 @@ const SwipeStack = ({
 
   return (
     <div className="flex flex-col items-center gap-6 p-6">
-      <div className="grid h-[30rem] w-72 place-items-center">
+      <div className="grid h-[32rem] w-80 place-items-center">
         {cards.map((card) => {
           return (
             <SwipeCard 
