@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { io, Socket } from "socket.io-client";
+import io, { Socket } from "socket.io-client";
 import { Conversation, Message } from '@/types/chat'
 import { profileData } from '@/data/profileData'
 import { getMessagesByConversation, addMessage } from '@/data/chatData'
@@ -13,7 +13,6 @@ import {
 } from '@/actions/swipe/swipeRight'
 import { ArrowLeftIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
 
-const socketRef = useRef<Socket | null>(null);
 
 interface ChatWindowProps {
   conversation: Conversation
@@ -30,6 +29,8 @@ const ChatWindow = ({
   onBack,
   isMobile
 }: ChatWindowProps) => {
+  
+const socketRef = useRef<typeof Socket | null>(null);
   const [newMessage, setNewMessage] = useState('')
   const [conversationMessages, setConversationMessages] = useState<Message[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)

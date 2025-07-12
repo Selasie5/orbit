@@ -56,27 +56,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     console.log('AuthContext: Starting auth initialization');
+    let mounted = true;
     
     // Get initial session
     const getSession = async () => {
-      console.log('AuthContext: Getting initial session');
-      const { data: { session } } = await supabase.auth.getSession()
-      const currentUser = session?.user ?? null
-      console.log('AuthContext: Initial session result:', { hasUser: !!currentUser, userId: currentUser?.id });
-      
-      setUser(currentUser)
-      
-      // Load profile if user exists
-      if (currentUser?.id) {
-        console.log('AuthContext: Loading profile for user:', currentUser.id);
-        await loadProfile(currentUser.id)
-      } else {
-        console.log('AuthContext: No user, clearing profile');
-        setProfile(null)
+      try {
+        console.log('AuthContext: Getting initial session');
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('AuthContext: Session error:', error);
+          if (mounted) {
+            setUser(null);
+            setProfile(null);
+            setLoading(false);
+          }
+          return;
+        }
+        
+        const currentUser = session?.user ?? null
+        console.log('AuthContext: Initial session result:', { hasUser: !!currentUser, userId: currentUser?.id });
+        
+        if (mounted) {
+          setUser(currentUser)
+          
+          // Load profile if user exists
+          if (currentUser?.id) {
+            console.log('AuthContext: Loading profile for user:', currentUser.id);
+            await loadProfile(currentUser.id)
+          } else {
+            console.log('AuthContext: No user, clearing profile');
+            setProfile(null)
+          }
+          
+          console.log('AuthContext: Setting loading to false');
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('AuthContext: Error in getSession:', error);
+        if (mounted) {
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+        }
       }
-      
-      console.log('AuthContext: Setting loading to false');
-      setLoading(false)
     }
 
     getSession()
@@ -85,6 +108,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('AuthContext: Auth state change:', { event, hasUser: !!session?.user });
+        
+        if (!mounted) return;
+        
         const currentUser = session?.user ?? null
         setUser(currentUser)
         
@@ -99,8 +125,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     )
 
-    return () => subscription.unsubscribe()
-  }, [supabase.auth])
+    return () => {
+      mounted = false;
+      subscription.unsubscribe()
+    }
+  }, []) // Remove supabase.auth dependency to prevent infinite loops
 
   const signUp = async (email: string, password: string, metadata?: Record<string, any>) => {
     const { data, error } = await supabase.auth.signUp({
@@ -183,10 +212,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-    // Clear profile data on logout
-    setProfile(null)
+    try {
+      console.log('AuthContext: Signing out user');
+      setLoading(true);
+      
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('AuthContext: Sign out error:', error);
+        throw error;
+      }
+      
+      // Clear all user data
+      setUser(null);
+      setProfile(null);
+      
+      console.log('AuthContext: User signed out successfully');
+    } catch (error) {
+      console.error('AuthContext: Sign out failed:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   }
 
   const updateUser = async (updates: Record<string, any>) => {
