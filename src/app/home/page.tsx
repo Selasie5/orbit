@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import SwipeCards from "@/components/ui/SwipeCards";
 import { useAuth } from "@/context/authContext";
 import { useRouter } from 'next/navigation';
@@ -9,47 +9,47 @@ import Link from 'next/link';
 const page = () => {
   const { user, profile, loading, signOut } = useAuth();
   const router = useRouter();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   console.log('Home page render - Auth state:', { 
     hasUser: !!user, 
     hasProfile: !!profile, 
     loading,
+    isRedirecting,
     userId: user?.id 
   });
 
   // Handle logout
   const handleLogout = async () => {
     try {
+      setIsRedirecting(true);
       await signOut();
       router.push('/auth/login');
     } catch (error) {
       console.error('Logout error:', error);
+      setIsRedirecting(false);
     }
   };
 
   // Protect the route - redirect if not authenticated
   useEffect(() => {
-    console.log('Auth effect triggered:', { loading, hasUser: !!user });
+    console.log('Auth effect triggered:', { loading, hasUser: !!user, isRedirecting });
     
-    if (!loading) {
-      if (!user) {
-        console.log('No user found, redirecting to login');
-        router.push('/auth/login');
-      } else {
-        console.log('User authenticated, staying on home page');
-      }
+    if (!loading && !user && !isRedirecting) {
+      console.log('No user found, redirecting to login');
+      setIsRedirecting(true);
+      router.replace('/auth/login');
     }
-  }, [user?.id, loading, router]); // Use user.id instead of user object to prevent reference changes
-
-  // Remove the API fetch useEffect - let SwipeCards handle this when user clicks the button
-
-  // Show loading while checking auth
-  if (loading) {
+  }, [user, loading, router, isRedirecting]); 
+  
+  if (loading || isRedirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lime-50 to-green-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">
+            {isRedirecting ? 'Redirecting...' : 'Loading...'}
+          </p>
         </div>
       </div>
     );
