@@ -67,20 +67,27 @@ const SwipeStack = ({
 
   return (
     <div className="flex flex-col items-center gap-6 p-6">
-      <div className="relative h-[32rem] w-80">
-        <div className="absolute inset-0 grid place-items-center">
-          {cards.map((card) => {
-            return (
-              <SwipeCard
-                key={card.id}
-                {...card}
-                setCards={setCards}
-                cards={cards}
-                setLastRemovedCard={setLastRemovedCard}
-              />
-            );
-          })}
-        </div>
+      <div className="grid h-[32rem] w-80 place-items-center">
+        {cards.map((card) => (
+          <SwipeCard 
+            key={card.id}
+            id={card.id}
+            name={card.name}
+            profileImage={card.profileImage}
+            course={card.course}
+            university={card.university}
+            skills={card.skills}
+            interests={card.interests}
+            age={card.age}
+            matchData={card.matchData}
+            profile={card.profile}
+            cards={cards}
+            setCards={setCards}
+            lastRemovedCard={lastRemovedCard}
+            setLastRemovedCard={setLastRemovedCard}
+            user={user} // Pass user context
+          />
+        ))}
       </div>
       
       <SwipeActions
