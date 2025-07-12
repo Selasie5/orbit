@@ -2,19 +2,17 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/context/authContext'
 import { useRouter } from 'next/navigation'
-import { Conversation, Message } from '@/types/chat'
-import { getConversationsForUser, getAllMessages } from '@/data/chatData'
-import ConversationList from '@/components/chat/ConversationList'
+import { useChat, ChatRoom } from '@/hooks/useChat'
 import ChatWindow from '@/components/chat/ChatWindow'
 import { ArrowLeftIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
-
+import ConversationList from '@/components/chat/ConversationList'
+import { profileData } from '@/data/profileData'
 const ChatPage = () => {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [messages, setMessages] = useState<Message[]>([])
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
+  const { chatRooms, messages, fetchChatRooms } = useChat()
+  const [selectedChatRoom, setSelectedChatRoom] = useState<ChatRoom | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
@@ -38,19 +36,17 @@ const ChatPage = () => {
     }
   }, [user, loading, router])
 
-  // Load conversations and messages
+  // Load chat rooms
   useEffect(() => {
     if (user?.id) {
-      const userConversations = getConversationsForUser(user.id)
-      const allMessages = getAllMessages()
-      
-      setConversations(userConversations)
-      setMessages(allMessages)
+      fetchChatRooms()
     }
-  }, [user])
+  }, [user, fetchChatRooms])
 
   // Handle mobile responsiveness
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
     }
@@ -59,6 +55,40 @@ const ChatPage = () => {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Handle selected chat room and get other user
+  const selectedOtherUser = selectedChatRoom ? (() => {
+    const otherUserId = selectedChatRoom.user1_id === user?.id ? selectedChatRoom.user2_id : selectedChatRoom.user1_id
+    
+    // Create a consistent hash of the userId to map to profileData
+    const hashUserId = (id: string) => {
+      let hash = 0;
+      for (let i = 0; i < id.length; i++) {
+        const char = id.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      return Math.abs(hash) % profileData.length;
+    }
+
+    const profileIndex = hashUserId(otherUserId)
+    const profile = profileData[profileIndex]
+    
+    if (profile) {
+      return {
+        id: otherUserId,
+        name: profile.name,
+        avatar_url: profile.profileImage
+      }
+    }
+    
+    // Fallback if profile not found
+    return {
+      id: otherUserId,
+      name: `User ${otherUserId.slice(-4)}`,
+      avatar_url: `https://ui-avatars.com/api/?name=User${otherUserId.slice(-4)}&background=84cc16&color=fff&size=128`
+    }
+  })() : null
 
   // Show loading while authenticating
   if (loading) {
@@ -88,7 +118,7 @@ const ChatPage = () => {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-green-900">Messages</h1>
-            <p className="text-sm text-green-600">{conversations.length} conversations</p>
+            <p className="text-sm text-green-600">{chatRooms.length} conversations</p>
           </div>
         </div>
         
@@ -107,29 +137,27 @@ const ChatPage = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Conversation List - Hidden on mobile when chat is selected */}
         <div className={`
-          ${isMobile ? (selectedConversation ? 'hidden' : 'flex') : 'flex'} 
+          ${isMobile ? (selectedChatRoom ? 'hidden' : 'flex') : 'flex'} 
           w-full md:w-1/3 lg:w-1/4 bg-white/60 backdrop-blur-sm border-r border-lime-200
         `}>
           <ConversationList
-            conversations={conversations}
-            messages={messages}
+            conversations={chatRooms}
             currentUserId={user.id}
-            selectedConversation={selectedConversation}
-            onSelectConversation={setSelectedConversation}
+            selectedConversation={selectedChatRoom}
+            onSelectConversation={setSelectedChatRoom}
           />
         </div>
 
         {/* Chat Window - Hidden on mobile when no chat is selected */}
         <div className={`
-          ${isMobile ? (selectedConversation ? 'flex' : 'hidden') : 'flex'} 
+          ${isMobile ? (selectedChatRoom ? 'flex' : 'hidden') : 'flex'} 
           flex-1 bg-white/40 backdrop-blur-sm
         `}>
-          {selectedConversation ? (
+          {selectedChatRoom && selectedOtherUser ? (
             <ChatWindow
-              conversation={selectedConversation}
-              messages={messages}
-              currentUserId={user.id}
-              onBack={() => setSelectedConversation(null)}
+              chatRoom={selectedChatRoom}
+              otherUser={selectedOtherUser}
+              onBack={() => setSelectedChatRoom(null)}
               isMobile={isMobile}
             />
           ) : (
