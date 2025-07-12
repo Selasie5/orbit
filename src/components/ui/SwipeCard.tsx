@@ -43,7 +43,6 @@ const SwipeCard = ({
     if (Math.abs(x.get()) > 100) {
       const actualUserId = profile?.id || id.toString();
 
-      // @ts-ignore
       const targetUser: MatchedProfile = {
         id,
         name,
@@ -52,6 +51,7 @@ const SwipeCard = ({
         university,
         skills,
         interests,
+        age, // Add age property here
         matchData,
         profile,
       };
@@ -100,13 +100,15 @@ const SwipeCard = ({
     <motion.div
       className="h-[32rem] w-80 origin-bottom rounded-3xl bg-gradient-to-br from-lime-50 to-white shadow-2xl border border-lime-300/70 overflow-hidden hover:cursor-grab active:cursor-grabbing transition-shadow"
       style={{
+        gridRow: 1,
+        gridColumn: 1,
         x,
         opacity,
         rotate,
-        zIndex: isFront ? 10 : cards.length - cards.findIndex(card => card.id === id),
+        transition: "0.125s transform",
         boxShadow: isFront
-          ? "0 25px 50px -12px rgb(0 0 0 / 0.25), 0 0 0 1px rgb(255 255 255 / 0.1), inset 0 1px 0 rgb(255 255 255 / 0.1)"
-          : "0 10px 25px -5px rgb(0 0 0 / 0.1), 0 0 0 1px rgb(255 255 255 / 0.05)",
+          ? "0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5)"
+          : undefined,
       }}
       animate={{
         scale: isFront ? 1 : 0.96,
@@ -141,59 +143,53 @@ const SwipeCard = ({
         {/* Swipe Indicators */}
         <motion.div
           style={{ opacity: 1 }}
-          style={{ opacity: 1 }}
-          className="absolute top-10 left-10 z-10 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-lg transform -rotate-12"
+          className="absolute top-10 left-10 z-10 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-lg -rotate-12"
         >
           LIKE
         </motion.div>
-        
         <motion.div
-          style={{ opacity: nopeOpacity }}
-          className="absolute top-10 right-10 z-10 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-lg transform rotate-12"
+          style={{ opacity: 0.5 }}
+          className="absolute top-10 right-10 z-10 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-lg rotate-12"
         >
           NOPE
         </motion.div>
-
         {/* Profile Image */}
         <img
           src={profileImage}
           alt={`${name}'s profile`}
           className="absolute inset-0 w-full h-full object-cover"
         />
-
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-
         {/* Glass Effect Overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent" />
-
         {/* Content */}
         <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md rounded-2xl mx-3 mb-3 p-5 max-h-[60%] overflow-y-auto border border-white/30 shadow-lg">
           <div className="flex items-center justify-between mb-1">
-      <div>
-        <h3 className="text-xl font-extrabold text-lime-700 leading-tight flex items-center gap-2 drop-shadow">
-          <UserIcon className="w-5 h-5 text-lime-400" />
-          {name}
-        </h3>
-        <p className="text-xs text-gray-700 font-medium leading-tight">{course}</p>
-        <p className="text-[11px] text-gray-500 leading-tight">{university}</p>
-      </div>
-      {matchData && (
-        <div className="flex flex-col items-end">
-          <div className="flex items-center gap-1 bg-gradient-to-r from-lime-500 to-green-600 text-white px-3 py-1 rounded-xl text-base font-bold shadow border border-lime-300">
-            <StarIcon className="w-4 h-4 text-yellow-200" />
-            {matchData.matchScore}%
+            <div>
+              <h3 className="text-xl font-extrabold text-lime-700 leading-tight flex items-center gap-2 drop-shadow">
+                <UserIcon className="w-5 h-5 text-lime-400" />
+                {name}
+              </h3>
+              <p className="text-xs text-gray-700 font-medium leading-tight">{course}</p>
+              <p className="text-[11px] text-gray-500 leading-tight">{university}</p>
+            </div>
+            {matchData && (
+              <div className="flex flex-col items-end">
+                <div className="flex items-center gap-1 bg-gradient-to-r from-lime-500 to-green-600 text-white px-3 py-1 rounded-xl text-base font-bold shadow border border-lime-300">
+                  <StarIcon className="w-4 h-4 text-yellow-200" />
+                  {matchData.matchScore}%
+                </div>
+                <div className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[10px] mt-1 font-semibold">
+                  #{matchData.rank} • {matchData.matchType}
+                </div>
+              </div>
+            )}
           </div>
-          <div className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[10px] mt-1 font-semibold">
-            #{matchData.rank} • {matchData.matchType}
-          </div>
-        </div>
-      )}
-    </div>
         </div>
       </div>
     </motion.div>
   );
-};
+}
 
 export default SwipeCard;
