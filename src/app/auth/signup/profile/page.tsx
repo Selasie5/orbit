@@ -14,7 +14,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/authContext";
-import { coursesInGhanaUniversities } from "../../../../../data";
+import { coursesInGhanaUniversities, universtitiesInGhana } from "../../../../../data";
 import Link from "next/link";
 
 const initialValues = {
@@ -26,6 +26,7 @@ const initialValues = {
   skills: "",
   bio: "",
   interests: "",
+  university:"",
 };
 
 const validationSchema = Yup.object({
@@ -79,6 +80,7 @@ const Page = () => {
         skills: values.skills,
         interests: values.interests,
         bio: values.bio,
+        university:values.university,
         avatar_url: imageURL || null,
       };
       await createProfile(profileData);
@@ -155,6 +157,26 @@ const Page = () => {
                 {touched.password && errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
               </div>
 
+              <div>
+                <Label htmlFor="university">University</Label>
+                <Field name="university">
+                  {({ field, form }: any) => (
+                    <Select value={field.value} onValueChange={(value) => form.setFieldValue("university", value)}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="What university are you in ?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {universtitiesInGhana.universities_in_ghana.map((university) => (
+                          <SelectItem key={university} value={university}>
+                            {university}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </Field>
+                {touched.university && errors.university && <p className="text-xs text-red-500 mt-1">{errors.university}</p>}
+              </div>
               <div>
                 <Label htmlFor="courses">Course Offered</Label>
                 <Field name="course">

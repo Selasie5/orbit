@@ -51,7 +51,6 @@ const SwipeCard = ({
         university,
         skills,
         interests,
-        age, // Add age property here
         matchData,
         profile,
       };
