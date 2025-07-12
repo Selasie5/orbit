@@ -6,13 +6,11 @@ import { Label } from '@/components/ui/label'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/authContext'
 
-
 const page = () => {
   const router = useRouter()
   const { signIn } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
-  
-  
+
   const initialValues = {
     email: '',
     password: ''
@@ -20,19 +18,18 @@ const page = () => {
 
   const handleSubmit = async (values: typeof initialValues) => {
     setIsLoading(true)
-    
+
     try {
       const { data, error } = await signIn(values.email, values.password)
-      
+
       if (error) {
         console.error('Login error:', error)
         alert('Login failed: ' + error.message)
         return
       }
-      
+
       if (data.user) {
         console.log('Login successful:', data.user)
-        // Redirect to dashboard after successful login
         router.push('/home')
       }
     } catch (error) {
@@ -42,44 +39,46 @@ const page = () => {
       setIsLoading(false)
     }
   }
+
   return (
-   <main className='flex flex-col justify-center items-center  w-full min-h-screen'>
-<div className='flex flex-col justify-center items-start bg-white text-black p-8 rounded-lg shadow-lg w-1/2 h-auto'>
-<h1 className='text-2xl font-semibold'>Welcome back to Orbit</h1>
-<p className='text-gray-500 text-sm'>Log in to pick up where you left off - your network is waiting for you.</p>
-<div className='flex flex-col justify-center items-start w-full mt-4 gap-4'>
+    <main className="flex flex-col justify-center items-center min-h-screen px-4 py-6 bg-gray-50">
+      <div className="w-full sm:w-[90%] md:w-3/4 lg:w-1/2 xl:w-1/3 bg-white text-black p-6 sm:p-8 rounded-lg shadow-md">
+        <h1 className="text-2xl sm:text-3xl font-semibold mb-2">Welcome back to Orbit</h1>
+        <p className="text-gray-600 text-sm sm:text-base mb-6">
+          Log in to pick up where you left off — your network is waiting for you.
+        </p>
 
-  <Formik initialValues={initialValues} onSubmit={handleSubmit}>
-    <Form className='flex flex-col gap-4 w-full'>
-      <div className='space-y-2'>
-        <Label htmlFor="email">Email</Label>
-        <Field name="email" type="email" as={Input} placeholder="Email" />
-      </div>
-      <div className='space-y-2'>
-        <Label htmlFor="password">Password</Label>
-        <Field name="password" type="password" as={Input} placeholder="Password" />
-      </div>
-      <button 
-        type="submit" 
-        disabled={isLoading}
-        className='bg-lime-200 text-black p-2 rounded hover:bg-lime-300 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
-      >
-        {isLoading ? 'Logging in...' : 'Log In'}
-      </button>
-    </Form>
-  </Formik>
-</div>
-<div className='mt-4'>
-<span className=''>
-  Don't have an account? <a href="/auth/signup/profile" className="text-green-950 hover:underline">Sign Up</a>
-</span>
-</div>
+        <Formik initialValues={initialValues} onSubmit={handleSubmit}>
+          <Form className="flex flex-col gap-4 w-full">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Field name="email" type="email" as={Input} placeholder="Email" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Field name="password" type="password" as={Input} placeholder="Password" />
+            </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="bg-lime-200 text-black py-2 px-4 rounded hover:bg-lime-300 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Logging in...' : 'Log In'}
+            </button>
+          </Form>
+        </Formik>
 
-</div>
-   </main>
+        <div className="mt-4 text-sm text-center">
+          <span>
+            Don&apos;t have an account?{' '}
+            <a href="/auth/signup/profile" className="text-green-900 hover:underline">
+              Sign Up
+            </a>
+          </span>
+        </div>
+      </div>
+    </main>
   )
 }
 
 export default page
-
-

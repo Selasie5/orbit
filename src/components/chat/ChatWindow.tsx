@@ -1,19 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { io, Socket } from "socket.io-client";
+import socket from "@/utils/socket";
 import { Conversation, Message } from '@/types/chat'
 import { profileData } from '@/data/profileData'
 import { getMessagesByConversation, addMessage } from '@/data/chatData'
 import {
   getOtherUserId,
-  getUserDisplayName,
-  getUserProfileImage,
   getUserDisplayNameFromConversation,
   getUserProfileImageFromConversation,
   formatTimestamp
 } from '@/actions/swipe/swipeRight'
 import { ArrowLeftIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
-
-const socketRef = useRef<Socket | null>(null);
 
 interface ChatWindowProps {
   conversation: Conversation
@@ -38,30 +34,17 @@ const ChatWindow = ({
   const otherUserName = getUserDisplayNameFromConversation(conversation, currentUserId, profileData)
   const otherUserImage = getUserProfileImageFromConversation(conversation, currentUserId, profileData)
 
+  // Listen for incoming messages via socket.io
   useEffect(() => {
-  fetch("/api/socketio"); // Ensure the server is initialized
-
-  if (!socketRef.current) {
-    socketRef.current = io({
-      path: "/api/socketio",
-    });
-  }
-
-  const socket = socketRef.current;
-
   const handleReceiveMessage = (msg: Message) => {
-    // Only add messages not sent by this user to avoid duplicates
-    if (msg.senderId !== currentUserId) {
+    console.log("Received message via socket:", msg); // <-- Add this
+    if (msg.conversationId === conversation.id && msg.senderId !== currentUserId) {
       setConversationMessages((prev) => [...prev, msg]);
     }
   };
-
   socket.on("receive-message", handleReceiveMessage);
-
   return () => {
     socket.off("receive-message", handleReceiveMessage);
-    socket.disconnect();
-    socketRef.current = null;
   };
 }, [conversation.id, currentUserId]);
 
@@ -69,8 +52,6 @@ const ChatWindow = ({
   useEffect(() => {
     const msgs = getMessagesByConversation(conversation.id)
     setConversationMessages(msgs)
-    
-    // Note: We removed markMessagesAsRead call to prevent infinite re-renders
     // Messages can be marked as read in the parent component if needed
   }, [conversation.id, currentUserId])
 
@@ -80,12 +61,11 @@ const ChatWindow = ({
   }, [conversationMessages])
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim()) return
+    if (!newMessage.trim()) return;
 
-    const messageContent = newMessage.trim()
-    setNewMessage('')
+    const messageContent = newMessage.trim();
+    setNewMessage('');
 
-    // Create and add new message
     const message: Message = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       conversationId: conversation.id,
@@ -94,14 +74,14 @@ const ChatWindow = ({
       timestamp: new Date(),
       isRead: false,
       isIcebreaker: false
-    }
+    };
 
-    addMessage(message)
+    addMessage(message);
 
-socketRef.current?.emit("send-message", message);
+    socket.emit("send-message", message);
 
-    setConversationMessages(prev => [...prev, message])
-  }
+    setConversationMessages(prev => [...prev, message]);
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
