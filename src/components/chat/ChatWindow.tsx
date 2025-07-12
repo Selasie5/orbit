@@ -40,11 +40,11 @@ const socketRef = useRef<typeof Socket | null>(null);
   const otherUserImage = getUserProfileImageFromConversation(conversation, currentUserId, profileData)
 
   useEffect(() => {
-  fetch("/api/socketio"); // Ensure the server is initialized
+  fetch(""); // Ensure the server is initialized
 
   if (!socketRef.current) {
     socketRef.current = io({
-      path: "/api/socketio",
+      path: "",
     });
   }
 

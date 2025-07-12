@@ -114,13 +114,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const currentUser = session?.user ?? null
         setUser(currentUser)
         
-        // Load profile if user exists, clear if not
+        // Only load profile if user exists and it's not already loaded
         if (currentUser?.id) {
           await loadProfile(currentUser.id)
         } else {
           setProfile(null)
         }
         
+        // Always ensure loading is false after auth state change
         setLoading(false)
       }
     )
@@ -129,7 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mounted = false;
       subscription.unsubscribe()
     }
-  }, []) // Remove supabase.auth dependency to prevent infinite loops
+  }, [])
 
   const signUp = async (email: string, password: string, metadata?: Record<string, any>) => {
     const { data, error } = await supabase.auth.signUp({
