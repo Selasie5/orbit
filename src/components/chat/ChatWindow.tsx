@@ -1,89 +1,91 @@
 import React, { useState, useEffect, useRef } from 'react'
-import io, { Socket } from "socket.io-client";
 import socket from "@/utils/socket";
-import { Conversation, Message } from '@/types/chat'
-import { profileData } from '@/data/profileData'
-import { getMessagesByConversation, addMessage } from '@/data/chatData'
-import {
-  getOtherUserId,
-  getUserDisplayNameFromConversation,
-  getUserProfileImageFromConversation,
-  formatTimestamp
-} from '@/actions/swipe/swipeRight'
+import { useChat, Message, ChatRoom } from '@/hooks/useChat'
+import { useAuth } from '@/context/authContext'
 import { ArrowLeftIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 
 interface ChatWindowProps {
-  conversation: Conversation
-  messages: Message[]
-  currentUserId: string
+  chatRoom: ChatRoom
+  otherUser: {
+    id: string
+    name: string
+    avatar_url: string
+  }
   onBack: () => void
   isMobile: boolean
 }
 
 const ChatWindow = ({
-  conversation,
-  messages,
-  currentUserId,
+  chatRoom,
+  otherUser,
   onBack,
   isMobile
 }: ChatWindowProps) => {
-  
-const socketRef = useRef<typeof Socket | null>(null);
+  const { user } = useAuth()
+  const { messages, fetchMessages, sendMessage, markMessagesAsRead } = useChat()
   const [newMessage, setNewMessage] = useState('')
-  const [conversationMessages, setConversationMessages] = useState<Message[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const otherUserId = getOtherUserId(conversation, currentUserId)
-  const otherUserName = getUserDisplayNameFromConversation(conversation, currentUserId, profileData)
-  const otherUserImage = getUserProfileImageFromConversation(conversation, currentUserId, profileData)
+  // Load messages when component mounts or chat room changes
+  useEffect(() => {
+    if (chatRoom.id) {
+      fetchMessages(chatRoom.id)
+      markMessagesAsRead(chatRoom.id)
+    }
+  }, [chatRoom.id, fetchMessages, markMessagesAsRead])
 
   // Listen for incoming messages via socket.io
   useEffect(() => {
-  const handleReceiveMessage = (msg: Message) => {
-    console.log("Received message via socket:", msg); // <-- Add this
-    if (msg.conversationId === conversation.id && msg.senderId !== currentUserId) {
-      setConversationMessages((prev) => [...prev, msg]);
-    }
-  };
- socket.on("receive-message", handleReceiveMessage);
-  return () => {
-    socket.off("receive-message", handleReceiveMessage);
-  };
-}, []);
+    const handleReceiveMessage = (messageData: any) => {
+      console.log("Received message via socket:", messageData);
+      // The useChat hook will handle adding the message via real-time subscription
+      // But we can also manually trigger a refresh if needed
+      fetchMessages(chatRoom.id)
+    };
 
-  // Load messages for this conversation
-  useEffect(() => {
-    const msgs = getMessagesByConversation(conversation.id)
-    setConversationMessages(msgs)
-    // Messages can be marked as read in the parent component if needed
-  }, [conversation.id, currentUserId])
+    socket.on("receive-message", handleReceiveMessage);
+    
+    // Join the chat with user data
+    socket.emit("join-chat", {
+      username: user?.email || 'Anonymous',
+      userId: user?.id,
+      chatRoomId: chatRoom.id
+    });
+
+    return () => {
+      socket.off("receive-message", handleReceiveMessage);
+    };
+  }, [chatRoom.id, user, fetchMessages]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [conversationMessages])
+  }, [messages])
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !user) return;
 
     const messageContent = newMessage.trim();
     setNewMessage('');
+    setIsLoading(true);
 
-    const message: Message = {
-      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      conversationId: conversation.id,
-      senderId: currentUserId,
-      content: messageContent,
-      timestamp: new Date(),
-      isRead: false,
-      isIcebreaker: false
-    };
-
-    addMessage(message);
-
-    socket.emit("send-message", message);
-
-    setConversationMessages(prev => [...prev, message]);
+    try {
+      const message = await sendMessage(chatRoom.id, messageContent);
+      
+      if (message) {
+        // Emit to socket for real-time updates
+        socket.emit("send-message", {
+          message: messageContent,
+          chatRoomId: chatRoom.id,
+          senderId: user.id
+        });
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -92,6 +94,11 @@ const socketRef = useRef<typeof Socket | null>(null);
       handleSendMessage()
     }
   }
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -107,22 +114,22 @@ const socketRef = useRef<typeof Socket | null>(null);
         )}
 
         <img
-          src={otherUserImage}
-          alt={otherUserName}
+          src={otherUser.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=84cc16&color=fff`}
+          alt={otherUser.name}
           className="w-10 h-10 rounded-full object-cover border-2 border-lime-200"
         />
 
         <div>
-          <h2 className="font-semibold text-green-900">{otherUserName}</h2>
+          <h2 className="font-semibold text-green-900">{otherUser.name}</h2>
           <p className="text-sm text-green-600">Online now</p>
         </div>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {conversationMessages.map((message) => {
-          const isCurrentUser = message.senderId === currentUserId
-          const isAI = message.senderId === 'AI-Assistant'
+        {messages.map((message) => {
+          const isCurrentUser = message.sender_id === user?.id
+          const isAI = message.sender_id === 'AI-Assistant'
 
           return (
             <div
@@ -150,15 +157,15 @@ const socketRef = useRef<typeof Socket | null>(null);
 
                 {/* Timestamp */}
                 <div className={`text-xs text-green-600 mt-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
-                  {formatTimestamp(message.timestamp)}
+                  {formatTimestamp(message.created_at)}
                 </div>
               </div>
 
               {/* Avatar for other user */}
               {!isCurrentUser && !isAI && (
                 <img
-                  src={otherUserImage}
-                  alt={otherUserName}
+                  src={otherUser.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=84cc16&color=fff`}
+                  alt={otherUser.name}
                   className="w-8 h-8 rounded-full object-cover order-1 mr-2 mt-auto"
                 />
               )}
@@ -176,12 +183,13 @@ const socketRef = useRef<typeof Socket | null>(null);
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={`Message ${otherUserName}...`}
-            className="flex-1 px-4 py-2 bg-white border border-lime-200 rounded-full focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent"
+            placeholder={`Message ${otherUser.name}...`}
+            disabled={isLoading}
+            className="flex-1 px-4 py-2 bg-white border border-lime-200 rounded-full focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent disabled:opacity-50"
           />
           <button
             onClick={handleSendMessage}
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || isLoading}
             className="p-2 bg-lime-500 text-white rounded-full hover:bg-lime-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <PaperAirplaneIcon className="h-5 w-5" />

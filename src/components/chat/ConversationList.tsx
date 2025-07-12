@@ -1,34 +1,70 @@
 import React from 'react'
-import { Conversation, Message } from '@/types/chat'
+import { ChatRoom } from '@/hooks/useChat'
 import { profileData } from '@/data/profileData'
-import { 
-  getOtherUserId, 
-  getUserDisplayName, 
-  getUserProfileImage, 
-  getUserDisplayNameFromConversation,
-  getUserProfileImageFromConversation,
-  formatTimestamp, 
-  generateConversationPreview,
-  sortConversationsByLastMessage,
-  hasUnreadMessages
-} from '@/actions/swipe/swipeRight'
 
 interface ConversationListProps {
-  conversations: Conversation[]
-  messages: Message[]
+  conversations: ChatRoom[]
   currentUserId: string
-  selectedConversation: Conversation | null
-  onSelectConversation: (conversation: Conversation) => void
+  selectedConversation: ChatRoom | null
+  onSelectConversation: (conversation: ChatRoom) => void
 }
 
 const ConversationList = ({
   conversations,
-  messages,
   currentUserId,
   selectedConversation,
   onSelectConversation
 }: ConversationListProps) => {
-  const sortedConversations = sortConversationsByLastMessage(conversations)
+  // Simple helper functions
+  const getOtherUserId = (chatRoom: ChatRoom, currentUserId: string) => {
+    return chatRoom.user1_id === currentUserId ? chatRoom.user2_id : chatRoom.user1_id
+  }
+
+  const getUserProfile = (userId: string) => {
+    // Create a simple hash of the userId to map to profileData consistently
+    const hashUserId = (id: string) => {
+      let hash = 0;
+      for (let i = 0; i < id.length; i++) {
+        const char = id.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      return Math.abs(hash) % profileData.length;
+    }
+
+    const profileIndex = hashUserId(userId)
+    const profile = profileData[profileIndex]
+    
+    if (profile) {
+      return {
+        name: profile.name,
+        image: profile.profileImage,
+        course: profile.course
+      }
+    }
+    
+    // Fallback if not found
+    return {
+      name: `User ${userId.slice(-4)}`,
+      image: `https://ui-avatars.com/api/?name=User${userId.slice(-4)}&background=84cc16&color=fff&size=128`,
+      course: 'Unknown'
+    }
+  }
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m`
+    if (diffHours < 24) return `${diffHours}h`
+    if (diffDays < 7) return `${diffDays}d`
+    return date.toLocaleDateString()
+  }
 
   if (conversations.length === 0) {
     return (
@@ -48,13 +84,14 @@ const ConversationList = ({
         <h2 className="text-lg font-semibold text-green-900 mb-4">Chats</h2>
         
         <div className="space-y-2">
-          {sortedConversations.map((conversation) => {
+          {conversations.map((conversation: ChatRoom) => {
             const otherUserId = getOtherUserId(conversation, currentUserId)
-            const otherUserName = getUserDisplayNameFromConversation(conversation, currentUserId, profileData)
-            const otherUserImage = getUserProfileImageFromConversation(conversation, currentUserId, profileData)
-            const preview = generateConversationPreview(conversation.lastMessage)
-            const timestamp = conversation.lastMessage?.timestamp || conversation.createdAt
-            const hasUnread = hasUnreadMessages(conversation.id, currentUserId, messages)
+            const userProfile = getUserProfile(otherUserId)
+            const otherUserName = userProfile.name
+            const otherUserImage = userProfile.image
+            const preview = 'Start a conversation...' // Default preview
+            const timestamp = conversation.created_at
+            const hasUnread = false // Simplified for now
             const isSelected = selectedConversation?.id === conversation.id
 
             return (
@@ -77,6 +114,10 @@ const ConversationList = ({
                       src={otherUserImage}
                       alt={otherUserName}
                       className="w-12 h-12 rounded-full object-cover border-2 border-white"
+                      onError={(e) => {
+                        // Fallback to generated avatar if image fails to load
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUserName)}&background=84cc16&color=fff&size=128`
+                      }}
                     />
                     {hasUnread && (
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-lime-500 rounded-full border-2 border-white"></div>
@@ -107,5 +148,6 @@ const ConversationList = ({
     </div>
   )
 }
+
 
 export default ConversationList

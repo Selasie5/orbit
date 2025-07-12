@@ -111,36 +111,84 @@ async function createConversation({ user1Id, user2Id, matchedAt, user1Profile, u
   user1Id: string;
   user2Id: string;
   matchedAt: Date;
-  user1Profile?: any; // The current user's profile data
-  user2Profile?: any; // The matched user's profile data
+  user1Profile?: any;
+  user2Profile?: any;
 }): Promise<Conversation> {
-  const conversation: Conversation = {
-    id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    user1Id,
-    user2Id,
-    createdAt: matchedAt,
-    isActive: true,
-    // Store profile data for easy access
-    user1Profile: user1Profile ? {
-      id: user1Profile.id || user1Id,
-      name: getUserDisplayNameFromProfile(user1Profile),
-      profileImage: getUserProfileImageFromProfile(user1Profile),
-      course: user1Profile.course,
-      university: user1Profile.university
-    } : undefined,
-    user2Profile: user2Profile ? {
-      id: user2Profile.id || user2Id,
-      name: getUserDisplayNameFromProfile(user2Profile),
-      profileImage: getUserProfileImageFromProfile(user2Profile),
-      course: user2Profile.course,
-      university: user2Profile.university
-    } : undefined
-  };
-  
-  // Add to mock storage (replace with API call)
-  addConversation(conversation);
-  
-  return conversation;
+  try {
+    // Create chat room in database
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create_chat_room',
+        otherUserId: user2Id
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to create chat room');
+    }
+
+    const chatRoom = data.chatRoom;
+    
+    // Convert to legacy Conversation format for compatibility
+    const conversation: Conversation = {
+      id: chatRoom.id,
+      user1Id: chatRoom.user1_id,
+      user2Id: chatRoom.user2_id,
+      createdAt: new Date(chatRoom.created_at),
+      isActive: true,
+      // Store profile data for easy access
+      user1Profile: user1Profile ? {
+        id: user1Profile.id || user1Id,
+        name: getUserDisplayNameFromProfile(user1Profile),
+        profileImage: getUserProfileImageFromProfile(user1Profile),
+        course: user1Profile.course,
+        university: user1Profile.university
+      } : undefined,
+      user2Profile: user2Profile ? {
+        id: user2Profile.id || user2Id,
+        name: getUserDisplayNameFromProfile(user2Profile),
+        profileImage: getUserProfileImageFromProfile(user2Profile),
+        course: user2Profile.course,
+        university: user2Profile.university
+      } : undefined
+    };
+    
+    // Also add to local storage for backward compatibility
+    addConversation(conversation);
+    
+    return conversation;
+  } catch (error) {
+    console.error('Error creating conversation:', error);
+    // Fallback to local storage
+    const conversation: Conversation = {
+      id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      user1Id,
+      user2Id,
+      createdAt: matchedAt,
+      isActive: true,
+      user1Profile: user1Profile ? {
+        id: user1Profile.id || user1Id,
+        name: getUserDisplayNameFromProfile(user1Profile),
+        profileImage: getUserProfileImageFromProfile(user1Profile),
+        course: user1Profile.course,
+        university: user1Profile.university
+      } : undefined,
+      user2Profile: user2Profile ? {
+        id: user2Profile.id || user2Id,
+        name: getUserDisplayNameFromProfile(user2Profile),
+        profileImage: getUserProfileImageFromProfile(user2Profile),
+        course: user2Profile.course,
+        university: user2Profile.university
+      } : undefined
+    };
+    
+    addConversation(conversation);
+    return conversation;
+  }
 }
 
 async function generateAIIcebreaker({ targetUser, currentUserId }: {
@@ -212,22 +260,60 @@ async function sendMessage({ conversationId, senderId, message, isIcebreaker = f
   message: string;
   isIcebreaker?: boolean;
 }): Promise<Message> {
-  const newMessage: Message = {
-    id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    conversationId,
-    senderId,
-    content: message,
-    timestamp: new Date(),
-    isRead: false,
-    isIcebreaker
-  };
-  
-  // Add to mock storage (replace with API call)
-  addMessage(newMessage);
-  
-  console.log(`📨 Message sent to conversation ${conversationId}: ${message}`);
-  
-  return newMessage;
+  try {
+    // Send message to database
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'send_message',
+        chatRoomId: conversationId,
+        content: message
+      })
+    });
+
+    const data = await response.json();
+    
+    if (response.ok) {
+      // Convert database message to legacy format
+      const dbMessage = data.message;
+      const newMessage: Message = {
+        id: dbMessage.id,
+        conversationId,
+        senderId: dbMessage.sender_id,
+        content: dbMessage.content,
+        timestamp: new Date(dbMessage.created_at),
+        isRead: !!dbMessage.read_at,
+        isIcebreaker
+      };
+      
+      // Also add to local storage for backward compatibility
+      addMessage(newMessage);
+      
+      console.log(`📨 Message sent to conversation ${conversationId}: ${message}`);
+      return newMessage;
+    } else {
+      throw new Error(data.error || 'Failed to send message');
+    }
+  } catch (error) {
+    console.error('Error sending message:', error);
+    
+    // Fallback to local storage
+    const newMessage: Message = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      conversationId,
+      senderId,
+      content: message,
+      timestamp: new Date(),
+      isRead: false,
+      isIcebreaker
+    };
+    
+    addMessage(newMessage);
+    console.log(`📨 Message sent (fallback) to conversation ${conversationId}: ${message}`);
+    
+    return newMessage;
+  }
 }
 
 function showConversationNotification(targetUser: MatchedProfile) {
