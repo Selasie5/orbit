@@ -5,6 +5,8 @@ import {
   getOtherUserId, 
   getUserDisplayName, 
   getUserProfileImage, 
+  getUserDisplayNameFromConversation,
+  getUserProfileImageFromConversation,
   formatTimestamp, 
   generateConversationPreview,
   sortConversationsByLastMessage,
@@ -48,8 +50,8 @@ const ConversationList = ({
         <div className="space-y-2">
           {sortedConversations.map((conversation) => {
             const otherUserId = getOtherUserId(conversation, currentUserId)
-            const otherUserName = getUserDisplayName(otherUserId, profileData)
-            const otherUserImage = getUserProfileImage(otherUserId, profileData)
+            const otherUserName = getUserDisplayNameFromConversation(conversation, currentUserId, profileData)
+            const otherUserImage = getUserProfileImageFromConversation(conversation, currentUserId, profileData)
             const preview = generateConversationPreview(conversation.lastMessage)
             const timestamp = conversation.lastMessage?.timestamp || conversation.createdAt
             const hasUnread = hasUnreadMessages(conversation.id, currentUserId, messages)

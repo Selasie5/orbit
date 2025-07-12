@@ -26,7 +26,7 @@ const SwipeCard = ({
   cards,
   setLastRemovedCard,
 }: SwipeCardProps) => {
-  const { user } = useAuth();
+  const { user, profile: currentUserProfile } = useAuth();
   const x = useMotionValue(0);
 
   const rotateRaw = useTransform(x, [-150, 150], [-18, 18]);
@@ -35,12 +35,15 @@ const SwipeCard = ({
   const isFront = id === cards[cards.length - 1].id;
 
   const rotate = useTransform(() => {
-    const offset = isFront ? 0 : id % 2 ? 6 : -6;
+    const offset = isFront ? 0 : Number(id) % 2 ? 6 : -6;
     return `${rotateRaw.get() + offset}deg`;
   });
 
   const handleDragEnd = () => {
   if (Math.abs(x.get()) > 100) {
+    // Use the actual profile ID from database, not the sequential card ID
+    const actualUserId = profile?.id || id.toString();
+    
     const targetUser: MatchedProfile = {
       id,
       name,
@@ -57,9 +60,10 @@ const SwipeCard = ({
     if (x.get() > 0) {
       // Swipe Right (Like) - Creates conversation immediately
       handleSwipeRight({
-        cardId: id,
+        cardId: actualUserId, // Use actual user ID instead of sequential card ID
         targetUser,
         currentUserId: user?.id || '',
+        currentUserProfile, // Pass current user's profile data
         setCards,
         setLastRemovedCard,
         cards,
@@ -78,7 +82,7 @@ const SwipeCard = ({
     } else {
       // Swipe Left (Reject) - existing code unchanged
       handleSwipeLeft({
-        cardId: id,
+        cardId: actualUserId, // Use actual user ID instead of sequential card ID
         targetUser,
         currentUserId: user?.id || '',
         setCards,
