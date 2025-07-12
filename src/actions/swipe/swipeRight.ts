@@ -10,6 +10,7 @@ interface SwipeRightParams {
   
   // Current user context
   currentUserId: string; // From auth context
+  // @ts-ignore
   currentUserProfile?: any; // Current user's profile data from auth context
   
   // State management functions

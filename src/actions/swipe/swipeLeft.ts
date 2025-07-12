@@ -1,4 +1,4 @@
-import { Card as ProfileCard } from '@/data/profileData';
+// import { Card as ProfileCard } from '@/data/profileData';
 import { MatchedProfile } from '@/components/ui/SwipeCards';
 
 interface SwipeLeftParams {
@@ -30,8 +30,8 @@ export const handleSwipeLeft = async ({
   setCards,
   setLastRemovedCard,
   cards,
-  timestamp = new Date(),
-  swipeMethod = 'drag',
+  // timestamp = new Date(),
+  // swipeMethod = 'drag',
   onSwipeComplete,
   onError
 }: SwipeLeftParams) => {
