@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import SwipeCard from "./SwipeCard";
 import SwipeActions from "./SwipeActions";
+
+import { handleSwipeRight } from "@/actions/swipe/swipeRight";
+import { handleSwipeLeft } from "@/actions/swipe/swipeLeft";
+import { useAuth } from "@/context/authContext";
+
 import { MatchedProfile } from "./SwipeCards";
+
 
 interface SwipeStackProps {
   cards: MatchedProfile[];
@@ -16,7 +22,9 @@ const SwipeStack = ({
   lastRemovedCard,
   setLastRemovedCard,
 }: SwipeStackProps) => {
-  const handleSwipeLeft = () => {
+  const { user } = useAuth(); // Add this line
+
+  const swipeLeft = () => {
     if (cards.length > 0) {
       const frontCard = cards[cards.length - 1];
       setLastRemovedCard(frontCard);
@@ -25,12 +33,28 @@ const SwipeStack = ({
     }
   };
 
-  const handleSwipeRight = () => {
+  const swipeRight = () => {
     if (cards.length > 0) {
       const frontCard = cards[cards.length - 1];
-      setLastRemovedCard(frontCard);
-      setCards((prev) => prev.filter((card) => card.id !== frontCard.id));
-      console.log("Swiped right on card:", frontCard.name);
+      
+      handleSwipeRight({
+        cardId: frontCard.id,
+        targetUser: frontCard,
+        currentUserId: user?.id || '',
+        setCards,
+        setLastRemovedCard,
+        cards,
+        swipeMethod: 'button',
+        onSwipeComplete: (action, user, conversation) => {
+          console.log(`✅ ${action} completed for ${user.name} - Conversation: ${conversation.id}`);
+        },
+        onConversationCreated: (conversation) => {
+          console.log(`💬 Ready to chat with ${frontCard.name}! Conversation ID: ${conversation.id}`);
+        },
+        onError: (error) => {
+          console.error('Swipe right error:', error);
+        }
+      });
     }
   };
 
@@ -48,9 +72,6 @@ const SwipeStack = ({
           return (
             <SwipeCard 
               key={card.id} 
-              cards={cards} 
-              setCards={setCards} 
-              setLastRemovedCard={setLastRemovedCard} 
               {...card} 
             />
           );
@@ -58,8 +79,8 @@ const SwipeStack = ({
       </div>
       
       <SwipeActions
-        onSwipeLeft={handleSwipeLeft}
-        onSwipeRight={handleSwipeRight}
+        onSwipeLeft={swipeLeft}
+        onSwipeRight={swipeRight}
         onUndo={handleUndo}
         canSwipe={cards.length > 0}
         canUndo={!!lastRemovedCard}

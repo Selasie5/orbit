@@ -1,3 +1,5 @@
+
+import { useSwipe } from "@/context/SwipeContext";
 import React, { useState, useEffect } from "react";
 import { Card as ProfileCard } from "@/data/profileData";
 import SwipeStack from "./SwipeStack";
@@ -29,6 +31,7 @@ export interface MatchedProfile extends Omit<ProfileCard, 'id'> {
 }
 
 const SwipeCards = () => {
+
   const [cards, setCards] = useState<MatchedProfile[]>([]);
   const [lastRemovedCard, setLastRemovedCard] = useState<MatchedProfile | null>(null);
   const [loading, setLoading] = useState(false); // Changed to false initially
@@ -147,6 +150,7 @@ const SwipeCards = () => {
       </div>
     );
   }
+
 
   return (
     <SwipeStack

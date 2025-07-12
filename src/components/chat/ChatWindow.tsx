@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { io, Socket } from "socket.io-client";
 import { Conversation, Message } from '@/types/chat'
 import { profileData } from '@/data/profileData'
 import { getMessagesByConversation, addMessage } from '@/data/chatData'
@@ -11,6 +12,8 @@ import {
   formatTimestamp
 } from '@/actions/swipe/swipeRight'
 import { ArrowLeftIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
+
+const socketRef = useRef<Socket | null>(null);
 
 interface ChatWindowProps {
   conversation: Conversation
@@ -34,6 +37,33 @@ const ChatWindow = ({
   const otherUserId = getOtherUserId(conversation, currentUserId)
   const otherUserName = getUserDisplayNameFromConversation(conversation, currentUserId, profileData)
   const otherUserImage = getUserProfileImageFromConversation(conversation, currentUserId, profileData)
+
+  useEffect(() => {
+  fetch("/api/socketio"); // Ensure the server is initialized
+
+  if (!socketRef.current) {
+    socketRef.current = io({
+      path: "/api/socketio",
+    });
+  }
+
+  const socket = socketRef.current;
+
+  const handleReceiveMessage = (msg: Message) => {
+    // Only add messages not sent by this user to avoid duplicates
+    if (msg.senderId !== currentUserId) {
+      setConversationMessages((prev) => [...prev, msg]);
+    }
+  };
+
+  socket.on("receive-message", handleReceiveMessage);
+
+  return () => {
+    socket.off("receive-message", handleReceiveMessage);
+    socket.disconnect();
+    socketRef.current = null;
+  };
+}, [conversation.id, currentUserId]);
 
   // Load messages for this conversation
   useEffect(() => {
@@ -67,6 +97,9 @@ const ChatWindow = ({
     }
 
     addMessage(message)
+
+socketRef.current?.emit("send-message", message);
+
     setConversationMessages(prev => [...prev, message])
   }
 

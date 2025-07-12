@@ -7,9 +7,35 @@ interface UserProfile {
   age?: number;
 }
 
+function getRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+const toneOptions = [
+  'friendly and warm like a quick campus chat',
+  'lively and kind with a Ghanaian touch',
+  'welcoming and fun like a uni hangout',
+  'engaging and easygoing like a group project vibe',
+];
+
+const lengthOptions = [
+  'Keep it short and sweet (30–50 words)',
+];
+
+const creativeChallenges = [
+  'Mention a Ghanaian campus vibe, like a canteen meetup.',
+  'Ask a fun, simple question tied to their interests.',
+  'Add a 😊 or 🇬🇭 emoji for a friendly touch.',
+  'Make it feel like a quick chat before a lecture.',
+];
+
 export function createIcebreakerPrompt(targetUser: UserProfile, currentUser?: Partial<UserProfile>): string {
-  const basePrompt = `Generate a personalized, friendly networking icebreaker message for a college networking app.`;
-  
+  const selectedTone = getRandom(toneOptions);
+  const selectedLength = getRandom(lengthOptions);
+  const selectedChallenge = getRandom(creativeChallenges);
+
+  const basePrompt = `Generate a short, friendly networking icebreaker message for a college networking app that feels authentically Ghanaian and natural.`;
+
   const targetInfo = `
 Target person details:
 - Name: ${targetUser.name}
@@ -24,37 +50,21 @@ Your details (for context):
 - Interests: ${currentUser.interests?.join(', ') || 'Not specified'}
 - Skills: ${currentUser.skills?.join(', ') || 'Not specified'}` : '';
 
-  const guidelines = `
-Guidelines for networking icebreaker:
-- Keep it casual and friendly (50-80 words max)
-- Reference something specific from their profile (course, skills, interests, or university)
-- Ask an engaging question about their work, projects, or experiences
-- Use appropriate emojis sparingly (1-2 max)
-- Focus on collaboration, learning, or professional development
-- Make it feel natural and conversational
-- This is for NETWORKING/PROFESSIONAL connections, not dating
-- Suggest potential collaboration, knowledge sharing, or coffee chat
+  const styleGuidelines = `
+Instructions for writing:
+- ${selectedLength}
+- Use a ${selectedTone} tone
+- Mention one specific thing from the target's profile
+- Ask a simple, engaging question to spark a chat
+- Suggest a casual connection, like grabbing food or a study vibe
+- Use 1 emoji (e.g., 😊, 🇬🇭, or 📚) for warmth
+- Avoid romantic vibes — this is for professional and social networking
+- Sound like a Ghanaian uni student, natural and friendly
+- Avoid heavy slang (e.g., no "chale" or "dey bee")`;
 
-Examples of good networking icebreakers:
-- "Hey Sarah! I noticed you're studying Computer Science at MIT. I'm working git on a React project and saw you have experience with that - any tips for a fellow student? 💻"
-- "Hi there! Your photography interest caught my eye. I'm organizing a campus photo walk event - would you be interested in joining or have any location suggestions? 📸"
-- "Hello! I see we're both into data science. Have you worked on any interesting projects lately? Always looking to learn from fellow students! 📊"`;
+  const creativityPrompt = `
+Creative twist:
+- ${selectedChallenge}`;
 
-  return `${basePrompt}\n${targetInfo}${currentUserInfo}\n${guidelines}`;
-}
-
-export function createConnectionPrompt(user1: UserProfile, user2: UserProfile): string {
-  return `Generate a brief explanation of why ${user1.name} and ${user2.name} might be great networking connections based on their profiles.
-  
-${user1.name}: ${user1.course} at ${user1.university}, interests: ${user1.interests.join(', ')}, skills: ${user1.skills.join(', ')}
-${user2.name}: ${user2.course} at ${user2.university}, interests: ${user2.interests.join(', ')}, skills: ${user2.skills.join(', ')}
-
-Focus on professional synergies, collaboration opportunities, or shared learning interests. Keep it positive, specific, and under 30 words.`;
-}
-
-export function createEventInvitePrompt(targetUser: UserProfile, eventType: string): string {
-  return `Generate a friendly invitation message for ${targetUser.name} to join a ${eventType} event.
-  
-Consider their interests: ${targetUser.interests.join(', ')} and skills: ${targetUser.skills.join(', ')}.
-Make it personal but not pushy, and explain why this event might interest them.`;
+  return `${basePrompt}\n${targetInfo}${currentUserInfo}\n${styleGuidelines}\n${creativityPrompt}`;
 }

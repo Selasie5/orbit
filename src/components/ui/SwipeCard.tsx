@@ -1,8 +1,21 @@
-import React, { Dispatch, SetStateAction } from "react";
+import React from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { handleSwipeRight } from "@/actions/swipe/swipeRight";
 import { handleSwipeLeft } from "@/actions/swipe/swipeLeft";
 import { useAuth } from "@/context/authContext";
+
+import { useSwipe } from "@/context/SwipeContext";
+
+interface SwipeCardProps {
+  id: number;
+  name: string;
+  profileImage: string;
+  course: string;
+  university: string;
+  skills: string[];
+  interests: string[];
+  age: number;
+
 import { MatchedProfile } from "./SwipeCards";
 
 interface SwipeCardProps extends MatchedProfile {
@@ -27,6 +40,7 @@ const SwipeCard = ({
   setLastRemovedCard,
 }: SwipeCardProps) => {
   const { user, profile: currentUserProfile } = useAuth();
+
   const x = useMotionValue(0);
 
   const rotateRaw = useTransform(x, [-150, 150], [-18, 18]);
@@ -97,8 +111,7 @@ const SwipeCard = ({
         }
       });
     }
-  }
-};
+  };
 
   return (
     <motion.div
