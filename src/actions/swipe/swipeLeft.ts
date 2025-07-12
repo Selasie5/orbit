@@ -1,24 +1,25 @@
 import { Card as ProfileCard } from '@/data/profileData';
+import { MatchedProfile } from '@/components/ui/SwipeCards';
 
 interface SwipeLeftParams {
   // Card being swiped
-  cardId: number;
-  targetUser: ProfileCard;
+  cardId: string; // Changed to string to support UUIDs
+  targetUser: MatchedProfile;
   
   // Current user context
   currentUserId: string; // From auth context
   
   // State management functions
-  setCards: React.Dispatch<React.SetStateAction<ProfileCard[]>>;
-  setLastRemovedCard: React.Dispatch<React.SetStateAction<ProfileCard | null>>;
-  cards: ProfileCard[];
+  setCards: React.Dispatch<React.SetStateAction<MatchedProfile[]>>;
+  setLastRemovedCard: React.Dispatch<React.SetStateAction<MatchedProfile | null>>;
+  cards: MatchedProfile[];
   
   // Optional: Analytics/tracking
   timestamp?: Date;
   swipeMethod?: 'drag' | 'button'; // How the swipe was triggered
   
   // Optional: Callback functions
-  onSwipeComplete?: (action: 'reject', targetUser: ProfileCard) => void;
+  onSwipeComplete?: (action: 'reject', targetUser: MatchedProfile) => void;
   onError?: (error: Error) => void;
 }
 
