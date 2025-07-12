@@ -12,8 +12,7 @@ import {
 } from '@/actions/swipe/swipeRight'
 import { ArrowLeftIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
 
-// Move socketRef inside the component to avoid issues with hot reloads in Next.js
-let socketRef: React.MutableRefObject<Socket | null> | null = null;
+const socketRef = useRef<Socket | null>(null);
 
 interface ChatWindowProps {
   conversation: Conversation
@@ -38,43 +37,32 @@ const ChatWindow = ({
   const otherUserName = getUserDisplayName(otherUserId, profileData)
   const otherUserImage = getUserProfileImage(otherUserId, profileData)
 
-  // Initialize socketRef only once per component instance
-  if (!socketRef) {
-    socketRef = useRef<Socket | null>(null);
+  useEffect(() => {
+  fetch("/api/socketio"); // Ensure the server is initialized
+
+  if (!socketRef.current) {
+    socketRef.current = io({
+      path: "/api/socketio",
+    });
   }
 
-  useEffect(() => {
-    // Ensure the Socket.IO server is initialized
-    fetch("/api/socketio").catch(() => {});
+  const socket = socketRef.current;
 
-    // Only connect if not already connected
-    if (!socketRef.current) {
-      socketRef.current = io({
-        path: "/api/socketio",
-      });
+  const handleReceiveMessage = (msg: Message) => {
+    // Only add messages not sent by this user to avoid duplicates
+    if (msg.senderId !== currentUserId) {
+      setConversationMessages((prev) => [...prev, msg]);
     }
+  };
 
-    const socket = socketRef.current;
+  socket.on("receive-message", handleReceiveMessage);
 
-    const handleReceiveMessage = (msg: Message) => {
-      // Only add messages for this conversation and not sent by this user
-      if (
-        msg.conversationId === conversation.id &&
-        msg.senderId !== currentUserId
-      ) {
-        setConversationMessages((prev) => [...prev, msg]);
-      }
-    };
-
-    socket.on("receive-message", handleReceiveMessage);
-
-    return () => {
-      socket.off("receive-message", handleReceiveMessage);
-      // Only disconnect if the component is unmounting (not just changing conversation)
-      socket.disconnect();
-      socketRef.current = null;
-    };
-  }, [conversation.id, currentUserId]);
+  return () => {
+    socket.off("receive-message", handleReceiveMessage);
+    socket.disconnect();
+    socketRef.current = null;
+  };
+}, [conversation.id, currentUserId]);
 
   // Load messages for this conversation
   useEffect(() => {
@@ -109,10 +97,8 @@ const ChatWindow = ({
 
     addMessage(message)
 
-    // Emit to socket server
-    socketRef.current?.emit("send-message", message);
+socketRef.current?.emit("send-message", message);
 
-    // Optimistically update UI
     setConversationMessages(prev => [...prev, message])
   }
 
@@ -217,3 +203,9 @@ const ChatWindow = ({
             <PaperAirplaneIcon className="h-5 w-5" />
           </button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+export default ChatWindow
