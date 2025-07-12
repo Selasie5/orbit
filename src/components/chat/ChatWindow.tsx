@@ -10,8 +10,7 @@ import {
   getUserProfileImageFromConversation,
   formatTimestamp
 } from '@/actions/swipe/swipeRight'
-import { ArrowLeftIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
-
+import { ArrowLeftIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 
 interface ChatWindowProps {
   conversation: Conversation
@@ -46,11 +45,11 @@ const socketRef = useRef<typeof Socket | null>(null);
       setConversationMessages((prev) => [...prev, msg]);
     }
   };
-  socket.on("receive-message", handleReceiveMessage);
+ socket.on("receive-message", handleReceiveMessage);
   return () => {
     socket.off("receive-message", handleReceiveMessage);
   };
-}, [conversation.id, currentUserId]);
+}, []);
 
   // Load messages for this conversation
   useEffect(() => {

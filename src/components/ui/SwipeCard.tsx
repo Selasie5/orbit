@@ -1,5 +1,4 @@
 import React, { Dispatch, SetStateAction } from "react";
-import React, { Dispatch, SetStateAction } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { handleSwipeRight } from "@/actions/swipe/swipeRight";
 import { handleSwipeLeft } from "@/actions/swipe/swipeLeft";
