@@ -140,14 +140,14 @@ const SwipeCard = ({
       <div className="relative h-full">
         {/* Swipe Indicators */}
         <motion.div
-          style={{ opacity: likeOpacity }}
+          style={{ opacity: 1 }}
           className="absolute top-10 left-10 z-10 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-lg transform -rotate-12"
         >
           LIKE
         </motion.div>
         
         <motion.div
-          style={{ opacity: nopeOpacity }}
+          style={{ opacity: 0.5 }}
           className="absolute top-10 right-10 z-10 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-lg transform rotate-12"
         >
           NOPE
