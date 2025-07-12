@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/authContext'
 
 
-const page = () => {
+const LoginPage = () => {
   const router = useRouter()
   const { signIn, user, loading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
@@ -35,23 +35,22 @@ const page = () => {
       if (error) {
         console.error('Login error:', error)
         alert('Login failed: ' + error.message)
+        setIsLoading(false)
         return
       }
       
       if (data.user) {
         console.log('Login successful:', data.user)
-        // Wait a moment for the auth context to update
-        setTimeout(() => {
-          console.log('Redirecting to home page...');
-          router.push('/home')
-        }, 100)
+        // Don't redirect immediately - let the auth state change handle it
+        // The useEffect above will redirect when user state updates
       }
     } catch (error) {
       console.error('Login process error:', error)
       alert('An error occurred during login')
-    } finally {
       setIsLoading(false)
     }
+    // Note: Don't set isLoading(false) here if login was successful
+    // Let the redirect happen first
   }
   
   // Show loading while auth is initializing
@@ -109,6 +108,6 @@ const page = () => {
   )
 }
 
-export default page
+export default LoginPage
 
 

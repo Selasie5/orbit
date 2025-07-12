@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ChatBubbleLeftRightIcon, UserCircleIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 import Link from 'next/link';
 
-const page = () => {
+const HomePage = () => {
   const { user, profile, loading, signOut } = useAuth();
   const router = useRouter();
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -110,4 +110,4 @@ const page = () => {
   )
 }
 
-export default page
+export default HomePage
