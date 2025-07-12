@@ -55,19 +55,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   useEffect(() => {
+    console.log('AuthContext: Starting auth initialization');
+    
     // Get initial session
     const getSession = async () => {
+      console.log('AuthContext: Getting initial session');
       const { data: { session } } = await supabase.auth.getSession()
       const currentUser = session?.user ?? null
+      console.log('AuthContext: Initial session result:', { hasUser: !!currentUser, userId: currentUser?.id });
+      
       setUser(currentUser)
       
       // Load profile if user exists
       if (currentUser?.id) {
+        console.log('AuthContext: Loading profile for user:', currentUser.id);
         await loadProfile(currentUser.id)
       } else {
+        console.log('AuthContext: No user, clearing profile');
         setProfile(null)
       }
       
+      console.log('AuthContext: Setting loading to false');
       setLoading(false)
     }
 
@@ -76,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('AuthContext: Auth state change:', { event, hasUser: !!session?.user });
         const currentUser = session?.user ?? null
         setUser(currentUser)
         

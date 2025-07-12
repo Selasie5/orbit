@@ -1,21 +1,39 @@
 "use client"
-import React, { use } from 'react'
+import React, { useEffect } from 'react'
 import { useAuth } from '@/context/authContext'
 import { useRouter } from 'next/navigation'
+
 const page = () => {
   const { user, loading } = useAuth()
   const router = useRouter();
 
-  React.useEffect(() => {
+  useEffect(() => {
+    console.log('Root page - Auth state:', { user: !!user, loading });
+    
     if (!loading) {
       if (user) {
-        router.push('/home');
+        console.log('User authenticated, redirecting to /home');
+        router.replace('/home'); // Use replace instead of push to avoid back button issues
       } else {
-        router.push('/auth/login');
+        console.log('No user found, redirecting to /auth/login');
+        router.replace('/auth/login'); // Use replace instead of push
       }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router]); // Use user.id instead of user object
 
+  // Show loading while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lime-50 to-green-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Return null after redirect logic
   return null;
 }
 
